@@ -62,7 +62,7 @@ export default {
     }
     if (pathname.startsWith('/static-preview/') && request.method === 'GET') {
       const [, , token, ...segments] = pathname.split('/');
-      return serveStaticAsset(request, token, segments, env.PREVIEW_SIGNING_SECRET);
+      return serveStaticAsset(request, token, segments, env.PREVIEW_SIGNING_SECRET, appOrigin(env) ?? undefined);
     }
     if (pathname === '/signin' && request.method === 'GET') {
       return signInPage(request, env);

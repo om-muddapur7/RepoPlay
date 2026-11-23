@@ -10,7 +10,7 @@ const staticTypes: Record<string, string> = {
   woff: "font/woff", woff2: "font/woff2", avif: "image/avif",
 };
 
-export async function serveStaticAsset(request: Request, token: string, segments: string[], secret?: string) {
+export async function serveStaticAsset(request: Request, token: string, segments: string[], secret?: string, publicOrigin?: string) {
   const reply = (message: string, status: number) => new Response(message, { status, headers: previewHeaders });
   const preview = secret && await readPreviewToken(token, secret, STATIC_CONTENT_AUDIENCE);
   if (!preview || !("source" in preview) || preview.source.entry !== "index.html") return reply("Preview not found.", 404);
@@ -54,7 +54,7 @@ export async function serveStaticAsset(request: Request, token: string, segments
   }
   if (Date.now() >= preview.expiresAt) return reply("This RepoPlay preview has expired.", 410);
 
-  const scope = `${new URL(request.url).origin}/static-preview/${token}/`;
+  const scope = `${new URL(publicOrigin ?? request.url).origin}/static-preview/${token}/`;
   const csp = extension === "html"
     ? `sandbox allow-scripts; default-src 'none'; script-src ${scope} 'unsafe-inline'; style-src ${scope} 'unsafe-inline'; img-src ${scope} data:; font-src ${scope} data:; connect-src ${scope}; frame-ancestors 'self'; form-action 'none'; base-uri 'none'`
     : "sandbox; default-src 'none'";
