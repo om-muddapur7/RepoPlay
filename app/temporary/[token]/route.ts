@@ -98,7 +98,12 @@ async function serveTemporaryPreview(request: Request, token: string, secret: st
     confirmation.addEventListener('click', save);
   } else {
     window.addEventListener('message', event => {
-      if (event.source === frame.contentWindow && event.origin === 'null' && event.data === 'repoplay:rendered') save();
+      if (event.source !== frame.contentWindow || event.origin !== 'null') return;
+      if (event.data === 'repoplay:rendered') save();
+      const root = ${JSON.stringify(staticGrant ? `/static-preview/${staticGrant.token}/` : null)};
+      if (!root || Date.now() >= expiry || event.data?.type !== 'repoplay:navigate' || typeof event.data.path !== 'string' || !event.data.path.startsWith(root)) return;
+      const url = new URL(event.data.path, location.origin);
+      if (url.origin === location.origin && url.pathname.startsWith(root) && url.pathname.endsWith('.html')) frame.src = url.href;
     });
   }
   function update() {
