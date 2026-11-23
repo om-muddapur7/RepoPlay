@@ -17,11 +17,12 @@ async function createTemporaryPreview(request: Request, secret: string | undefin
   const repo = typeof payload?.repository === "string" && repositoryFromUrl(payload.repository.trim());
   if (!repo) return reply({ error: "Enter a public GitHub repository URL such as https://github.com/owner/repo." }, 400);
 
+  let stage = "GitHub";
   try {
     const url = `https://api.github.com/repos/${encodeURIComponent(repo.owner)}/${encodeURIComponent(repo.name)}`;
     const github = await fetch(url, {
       headers: { Accept: "application/vnd.github+json", "User-Agent": "RepoPlay" },
-      redirect: "error",
+      redirect: "manual",
       signal: AbortSignal.timeout(6000),
       next: { revalidate: 60 },
     });
@@ -33,12 +34,15 @@ async function createTemporaryPreview(request: Request, secret: string | undefin
       return reply({ error: "Set the public repository’s GitHub Website field to a working Vercel deployment. RepoPlay uses the deployed build." }, 422);
     }
 
+    stage = "Vercel";
     const homepage = await fetchHomepage(origin);
     await homepage.body?.cancel();
     if (!isHtml(homepage)) return reply({ error: "The Vercel homepage did not return a working HTML page." }, 422);
+    stage = "preview signing";
     const { token, expiresAt } = await createPreviewToken(origin, Date.now(), secret);
     return reply({ path: `/temporary/${token}`, expiresAt }, 201);
-  } catch {
-    return reply({ error: "RepoPlay could not reach GitHub or the demo host. Try again shortly." }, 502);
+  } catch (error) {
+    console.error("RepoPlay preview failed", stage, error instanceof Error ? error.name : "Unknown error");
+    return reply({ error: stage === "preview signing" ? "RepoPlay could not create the preview link." : `RepoPlay could not reach ${stage}. Try again shortly.` }, 502);
   }
 }

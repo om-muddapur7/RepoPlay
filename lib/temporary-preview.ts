@@ -65,7 +65,12 @@ export async function readPreviewToken(token: string, secret: string): Promise<P
 }
 
 export function fetchHomepage(origin: string) {
-  return fetch(origin + "/", { cache: "no-store", redirect: "error", signal: AbortSignal.timeout(6000) });
+  return fetch(origin + "/", {
+    headers: { "Cache-Control": "no-cache" },
+    next: { revalidate: 0 },
+    redirect: "manual",
+    signal: AbortSignal.timeout(6000),
+  });
 }
 
 export function isHtml(response: Response) {
