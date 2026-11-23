@@ -98,7 +98,7 @@ previewForm.addEventListener('submit', async (event) => {
 `;
 new Function(script + createScript);
 const html = '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>RepoPlay</title><style>' + css + '\n[hidden]{display:none!important}</style></head><body>' + home + details + '<script>' + script + createScript + '</script></body></html>';
-const sources = ['lib/temporary-preview.ts', 'app/api/temporary-previews/route.ts', 'app/temporary/[token]/route.ts'];
+const sources = ['lib/temporary-preview.ts', 'lib/source-preview-runtime.js', 'app/api/temporary-previews/route.ts', 'app/temporary/[token]/route.ts'];
 const shared = sources.map(path => {
   const source = readFileSync(new URL('../' + path, import.meta.url), 'utf8')
     .replace(/^import .*;\r?\n/gm, '')
@@ -109,7 +109,6 @@ const shared = sources.map(path => {
 const worker = `
 ${shared}
 const homeHtml = ${JSON.stringify(html)};
-const sourceRuntime = ${JSON.stringify(readFileSync(new URL('../public/repoplay-source-preview.js', import.meta.url), 'utf8'))};
 export default {
   async fetch(request, env) {
     const { pathname } = new URL(request.url);
@@ -118,9 +117,6 @@ export default {
     }
     if (pathname === '/api/temporary-previews' && request.method === 'POST') {
       return createTemporaryPreview(request, env.PREVIEW_SIGNING_SECRET);
-    }
-    if (pathname === '/repoplay-source-preview.js' && request.method === 'GET') {
-      return new Response(sourceRuntime, { headers: { 'Content-Type': 'text/javascript; charset=utf-8', 'X-Content-Type-Options': 'nosniff', 'Cache-Control': 'no-cache' } });
     }
     if (pathname.startsWith('/temporary/') && request.method === 'GET') {
       return serveTemporaryPreview(request, pathname.slice('/temporary/'.length), env.PREVIEW_SIGNING_SECRET);

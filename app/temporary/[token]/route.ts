@@ -1,4 +1,5 @@
 import { previewHeaders, readPreviewToken } from "../../../lib/temporary-preview";
+import { sourcePreviewRuntime } from "../../../lib/source-preview-runtime";
 
 export async function GET(request: Request, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
@@ -17,7 +18,7 @@ async function serveTemporaryPreview(request: Request, token: string, secret: st
       <body><p id="build-status" role="status">Building project from GitHub…</p><div id="root"></div>
       <script nonce="${nonce}">window.repoPlaySource = ${source};</script>
       <script nonce="${nonce}" src="https://cdn.jsdelivr.net/npm/esbuild-wasm@0.25.12/lib/browser.min.js"></script>
-      <script nonce="${nonce}" src="/repoplay-source-preview.js"></script></body></html>`, {
+      <script nonce="${nonce}">(${sourcePreviewRuntime.toString()})();</script></body></html>`, {
       headers: {
         ...previewHeaders,
         "Content-Type": "text/html; charset=utf-8",
