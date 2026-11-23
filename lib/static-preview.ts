@@ -56,7 +56,7 @@ export async function serveStaticAsset(request: Request, token: string, segments
 
   const scope = `${new URL(publicOrigin ?? request.url).origin}/static-preview/${token}/`;
   const csp = extension === "html"
-    ? `sandbox allow-scripts; default-src 'none'; script-src ${scope} 'unsafe-inline'; style-src ${scope} 'unsafe-inline'; img-src ${scope} data:; font-src ${scope} data:; connect-src ${scope}; frame-ancestors 'self'; form-action 'none'; base-uri 'none'`
+    ? `sandbox allow-scripts; default-src 'none'; script-src ${scope} ${mirror} 'unsafe-inline'; style-src ${scope} ${mirror} 'unsafe-inline'; img-src ${scope} ${mirror} data:; font-src ${scope} ${mirror} data:; connect-src ${scope} ${mirror}; frame-ancestors 'self'; form-action 'none'; base-uri 'none'`
     : "sandbox; default-src 'none'";
   const headers = {
     ...previewHeaders, "Content-Type": type, "Content-Security-Policy": csp,
@@ -65,8 +65,21 @@ export async function serveStaticAsset(request: Request, token: string, segments
   };
   const asset = new Blob(pieces);
   if (extension !== "html") return new Response(asset, { headers });
-  const html = await asset.text();
+  // A private Sites session is unavailable to asset requests from an opaque iframe.
+  const cdnPage = new URL(path, mirror);
+  const html = (await asset.text()).replace(
+    /(<(?:script|img)\b[^>]*?\s+src\s*=\s*|<link\b[^>]*?\s+href\s*=\s*)(["'])([^"']+)\2/gi,
+    (attribute, prefix: string, quote: string, value: string) => {
+      try {
+        const target = new URL(value, cdnPage);
+        return target.href.startsWith(mirror) ? prefix + quote + target.href + quote : attribute;
+      } catch {
+        return attribute;
+      }
+    },
+  );
+  const images = `<script>(()=>{const base=${JSON.stringify(cdnPage.href)},root=${JSON.stringify(mirror)};new MutationObserver(()=>{for(const image of document.images){try{const target=new URL(image.getAttribute("src"),base);if(target.href.startsWith(root)&&image.getAttribute("src")!==target.href)image.src=target.href;}catch{}}}).observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:["src"]});})();</script>`;
   const notify = `<script>window.addEventListener("load",()=>{if(document.body?.innerText.trim()||document.body?.querySelector("canvas,svg,img,video,input"))window.parent.postMessage("repoplay:rendered","*");});</script>`;
   const content = /<\/body\s*>/i.test(html) ? html.replace(/<\/body\s*>/i, tag => notify + tag) : html + notify;
-  return new Response(content, { headers });
+  return new Response(content.replace(/<head\b[^>]*>/i, tag => tag + images), { headers });
 }
