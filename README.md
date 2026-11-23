@@ -54,7 +54,14 @@ The initial schema defines profiles, categories, projects, and demo launch event
 
 Paste a public GitHub repository URL into the preview form. RepoPlay embeds a working public Vercel deployment from the repository’s Website field when available. For an unhosted React + Vite app, it pins the default branch to a commit and compiles the source inside a sandboxed browser frame. Source previews support Vite's `src/main` convention, a standard `root` element, local imports, CSS, common image formats, React, and React Router. React Router uses in-memory navigation in this mode. RepoPlay does not execute install scripts or Vite config and does not provide backend services or environment secrets.
 
-The signed preview link expires ten minutes after issuance. Requests after expiry receive HTTP 410, and the live viewer removes its iframe. RepoPlay stores no deployment files or database row to clean up. GitHub source files remain available independently. The sandbox limits navigation, forms, storage, and third-party requests, so some site features may be unavailable.
+Preview creation and viewing require a Google session. RepoPlay encrypts each preview link with authenticated encryption tied to the verified Supabase user ID. Signed-out visitors and other accounts receive HTTP 404. The owner gets HTTP 410 after ten minutes, and the live viewer removes its iframe. RepoPlay stores no deployment files or database row to clean up. GitHub source files remain available independently.
+
+### Google sign-in
+
+1. In Google Cloud, configure the consent screen and create a web OAuth client. Register the callback URL shown in the Supabase Google provider settings as the Google client's authorized redirect URI.
+2. In Supabase Auth, enable Google and enter that client ID and secret. Add the exact RepoPlay URL plus `/auth/callback` to the Supabase Redirect URLs allowlist. For local development, use `http://localhost:3000/auth/callback`.
+3. Copy `.env.example` to `.env.local` and fill in `REPOPLAY_ORIGIN`, `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY`. For Sites, configure the same variables in its environment settings with the deployed site origin. Keep the Google client secret in Supabase.
+4. Open `/signin` and select **Continue with Google**. The OAuth callback exchanges the PKCE code for a session in HTTP-only cookies. The sample gallery is still available without a RepoPlay session where hosting access permits it.
 
 To enable the feature, set `PREVIEW_SIGNING_SECRET` to a randomly generated server-side secret of at least 32 bytes. In PowerShell, run the following from the project directory before starting Next.js.
 

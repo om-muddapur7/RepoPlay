@@ -15,7 +15,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <header className="topbar">
           <nav className="shell nav" aria-label="Main navigation">
             <Link className="brand" href="/"><span aria-hidden="true">R</span> RepoPlay</Link>
-            <Link className="nav-link" href="/#gallery">Explore projects</Link>
+            <div className="flex flex-wrap justify-end gap-4">
+              <Link className="nav-link" href="/#gallery">Explore projects</Link>
+              <a className="nav-link" href="/signin">Sign in</a>
+              <a className="nav-link" href="/signin?mode=signout">Sign out</a>
+            </div>
           </nav>
         </header>
         {children}

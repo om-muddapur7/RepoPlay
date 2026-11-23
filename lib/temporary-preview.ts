@@ -53,26 +53,32 @@ function decode(text: string) {
   return Uint8Array.from(atob(text.replaceAll("-", "+").replaceAll("_", "/")), char => char.charCodeAt(0));
 }
 
-function signingKey(secret: string) {
-  return crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign", "verify"]);
+async function previewKey(secret: string) {
+  const raw = await crypto.subtle.digest("SHA-256", encoder.encode(`repoplay preview v2:${secret}`));
+  return crypto.subtle.importKey("raw", raw, "AES-GCM", false, ["encrypt", "decrypt"]);
 }
 
-export async function createPreviewToken(target: string | PreviewTarget, now: number, secret: string) {
+export async function createPreviewToken(target: string | PreviewTarget, now: number, secret: string, userId: string) {
   const expiresAt = now + PREVIEW_DURATION_MS;
   const preview = typeof target === "string" ? { origin: target } : target;
-  const body = encode(encoder.encode(JSON.stringify({ ...preview, expiresAt })));
-  const signature = await crypto.subtle.sign("HMAC", await signingKey(secret), encoder.encode(body));
-  return { token: body + "." + encode(new Uint8Array(signature)), expiresAt };
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const body = encoder.encode(JSON.stringify({ ...preview, expiresAt }));
+  const encrypted = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv, additionalData: encoder.encode(userId) }, await previewKey(secret), body,
+  );
+  return { token: encode(iv) + "." + encode(new Uint8Array(encrypted)), expiresAt };
 }
 
-export async function readPreviewToken(token: string, secret: string): Promise<Preview | null> {
-  if (token.length > 1024 || !/^[\w-]+\.[\w-]{43}$/.test(token)) return null;
-  const [body, provided] = token.split(".");
+export async function readPreviewToken(token: string, secret: string, userId: string): Promise<Preview | null> {
+  if (token.length > 1024 || !/^[\w-]{16}\.[\w-]+$/.test(token)) return null;
+  const [nonce, body] = token.split(".");
   try {
-    const bytes = decode(provided);
-    if (encode(bytes) !== provided ||
-      !await crypto.subtle.verify("HMAC", await signingKey(secret), bytes, encoder.encode(body))) return null;
-    const item = JSON.parse(new TextDecoder().decode(decode(body)));
+    const bytes = decode(body);
+    if (encode(bytes) !== body) return null;
+    const decrypted = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv: decode(nonce), additionalData: encoder.encode(userId) }, await previewKey(secret), bytes,
+    );
+    const item = JSON.parse(new TextDecoder().decode(decrypted));
     const origin = supportedHomepage(item.origin);
     if (!Number.isSafeInteger(item.expiresAt)) return null;
     if (origin) return { origin, expiresAt: item.expiresAt };

@@ -1,10 +1,22 @@
 import { createPreviewToken, fetchHomepage, findSourcePreview, isHtml, previewHeaders, repositoryFromUrl, supportedHomepage } from "../../../lib/temporary-preview";
+import { authContext, type AuthEnv } from "../../../lib/repoplay-auth";
 
 export async function POST(request: Request) {
-  return createTemporaryPreview(request, process.env.PREVIEW_SIGNING_SECRET);
+  return authenticatedCreation(request, process.env);
 }
 
-async function createTemporaryPreview(request: Request, secret: string | undefined) {
+async function authenticatedCreation(request: Request, env: AuthEnv & { PREVIEW_SIGNING_SECRET?: string }) {
+  const auth = authContext(request, env);
+  if (!auth.client) return Response.json({ error: "Google sign-in is awaiting configuration." }, { status: 503, headers: previewHeaders });
+  if (request.headers.get("origin") !== auth.origin) return new Response("Forbidden.", { status: 403, headers: previewHeaders });
+  const userId = await auth.userId();
+  const response = userId
+    ? await createTemporaryPreview(request, env.PREVIEW_SIGNING_SECRET, userId)
+    : Response.json({ error: "Sign in with Google to create a preview." }, { status: 401, headers: previewHeaders });
+  return auth.apply(response);
+}
+
+async function createTemporaryPreview(request: Request, secret: string | undefined, userId: string) {
   const reply = (body: object, status: number) => Response.json(body, { status, headers: previewHeaders });
   if (!secret || new TextEncoder().encode(secret).length < 32) return reply({ error: "Temporary previews are disabled on this installation." }, 503);
   if (request.headers.get("sec-fetch-site") === "cross-site" ||
@@ -37,7 +49,7 @@ async function createTemporaryPreview(request: Request, secret: string | undefin
       await homepage?.body?.cancel();
       if (homepage && isHtml(homepage)) {
         stage = "preview signing";
-        const { token, expiresAt } = await createPreviewToken(origin, Date.now(), secret);
+        const { token, expiresAt } = await createPreviewToken(origin, Date.now(), secret, userId);
         return reply({ path: `/temporary/${token}`, expiresAt }, 201);
       }
     }
@@ -47,7 +59,7 @@ async function createTemporaryPreview(request: Request, secret: string | undefin
       && await findSourcePreview(repo.owner, repo.name, metadata.default_branch);
     if (!source) return reply({ error: "Source previews currently support React + Vite apps with a src/main entry point and supported dependencies." }, 422);
     stage = "preview signing";
-    const { token, expiresAt } = await createPreviewToken({ source }, Date.now(), secret);
+    const { token, expiresAt } = await createPreviewToken({ source }, Date.now(), secret, userId);
     return reply({ path: `/temporary/${token}`, expiresAt }, 201);
   } catch (error) {
     console.error("RepoPlay preview failed", stage, error instanceof Error ? error.name : "Unknown error");

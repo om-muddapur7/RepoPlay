@@ -1,13 +1,22 @@
 import { previewHeaders, readPreviewToken } from "../../../lib/temporary-preview";
 import { sourcePreviewRuntime } from "../../../lib/source-preview-runtime";
+import { authContext, type AuthEnv } from "../../../lib/repoplay-auth";
 
 export async function GET(request: Request, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
-  return serveTemporaryPreview(request, token, process.env.PREVIEW_SIGNING_SECRET);
+  return authenticatedViewer(request, token, process.env);
 }
 
-async function serveTemporaryPreview(request: Request, token: string, secret: string | undefined) {
-  const preview = secret && await readPreviewToken(token, secret);
+async function authenticatedViewer(request: Request, token: string, env: AuthEnv & { PREVIEW_SIGNING_SECRET?: string }) {
+  const auth = authContext(request, env);
+  const userId = await auth.userId();
+  return auth.apply(userId
+    ? await serveTemporaryPreview(request, token, env.PREVIEW_SIGNING_SECRET, userId)
+    : new Response("Preview not found.", { status: 404, headers: previewHeaders }));
+}
+
+async function serveTemporaryPreview(request: Request, token: string, secret: string | undefined, userId: string) {
+  const preview = secret && await readPreviewToken(token, secret, userId);
   if (!preview) return new Response("Preview not found.", { status: 404, headers: previewHeaders });
   if (Date.now() >= preview.expiresAt) return new Response("This RepoPlay preview has expired.", { status: 410, headers: previewHeaders });
 

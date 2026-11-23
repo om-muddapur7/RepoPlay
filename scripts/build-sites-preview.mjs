@@ -1,6 +1,8 @@
 import { readdirSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import ts from 'typescript';
+import { build } from 'esbuild';
+import { fileURLToPath } from 'node:url';
 const root = new URL('../.next/', import.meta.url);
 const chunks = new URL('static/chunks/', root);
 const css = readdirSync(chunks).filter(x => x.endsWith('.css')).map(x => readFileSync(new URL(x, chunks), 'utf8')).join('\n');
@@ -80,6 +82,10 @@ previewForm.addEventListener('submit', async (event) => {
       body: JSON.stringify({ repository })
     });
     const result = await response.json();
+    if (response.status === 401) {
+      window.location.assign('/signin');
+      return;
+    }
     if (!response.ok) {
       previewStatus.textContent = result.error;
       return;
@@ -98,10 +104,10 @@ previewForm.addEventListener('submit', async (event) => {
 `;
 new Function(script + createScript);
 const html = '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>RepoPlay</title><style>' + css + '\n[hidden]{display:none!important}</style></head><body>' + home + details + '<script>' + script + createScript + '</script></body></html>';
-const sources = ['lib/temporary-preview.ts', 'lib/source-preview-runtime.js', 'app/api/temporary-previews/route.ts', 'app/temporary/[token]/route.ts'];
+const sources = ['lib/temporary-preview.ts', 'lib/source-preview-runtime.js', 'lib/repoplay-auth.ts', 'app/api/temporary-previews/route.ts', 'app/temporary/[token]/route.ts'];
 const shared = sources.map(path => {
   const source = readFileSync(new URL('../' + path, import.meta.url), 'utf8')
-    .replace(/^import .*;\r?\n/gm, '')
+    .replace(/^import .* from ["']\.{1,2}\/.*;\r?\n/gm, '')
     .replace(/^export /gm, '');
   return ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } }).outputText;
 }).join('\n');
@@ -116,10 +122,16 @@ export default {
       return new Response(homeHtml, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
     }
     if (pathname === '/api/temporary-previews' && request.method === 'POST') {
-      return createTemporaryPreview(request, env.PREVIEW_SIGNING_SECRET);
+      return authenticatedCreation(request, env);
     }
     if (pathname.startsWith('/temporary/') && request.method === 'GET') {
-      return serveTemporaryPreview(request, pathname.slice('/temporary/'.length), env.PREVIEW_SIGNING_SECRET);
+      return authenticatedViewer(request, pathname.slice('/temporary/'.length), env);
+    }
+    if (pathname === '/signin' && request.method === 'GET') {
+      return signInPage(request, env);
+    }
+    if (pathname.startsWith('/auth/')) {
+      return handleAuth(request, pathname.slice('/auth/'.length), env);
     }
     return new Response('Not found.', { status: 404 });
   },
@@ -127,4 +139,8 @@ export default {
 `;
 const output = new URL('../dist/server/', import.meta.url);
 mkdirSync(output, { recursive: true });
-writeFileSync(new URL('index.js', output), worker);
+const bundle = await build({
+  stdin: { contents: worker, resolveDir: fileURLToPath(new URL('../', import.meta.url)) },
+  bundle: true, platform: 'browser', format: 'esm', target: 'es2022', write: false,
+});
+writeFileSync(new URL('index.js', output), bundle.outputFiles[0].contents);

@@ -20,7 +20,8 @@ export function TemporaryPreviewForm() {
         body: JSON.stringify({ repository }),
       });
       const body = await response.json();
-      if (!response.ok) setError(body.error);
+      if (response.status === 401) window.location.assign("/signin");
+      else if (!response.ok) setError(body.error ?? "Could not create a preview.");
       else setPreview(body);
     } catch {
       setError("Could not create a preview. Try again.");
