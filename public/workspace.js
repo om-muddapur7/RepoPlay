@@ -22,12 +22,16 @@
   });
 
   const form = document.getElementById("preview-form");
-  if (!form) return;
-  const input = form.elements.repository;
-  const button = form.querySelector("button");
+  if (location.pathname === "/" && ["#gallery", "#preview"].includes(location.hash)) {
+    location.replace("/workspace" + location.hash);
+    return;
+  }
+  const input = form?.elements.repository;
+  const button = form?.querySelector("button");
   const result = document.getElementById("preview-result");
   const avatar = document.getElementById("account-avatar");
   const signin = document.getElementById("account-signin");
+  if (!avatar || !signin) return;
   const landingSignin = document.getElementById("landing-signin");
   const list = document.getElementById("history-list");
   const empty = document.getElementById("gallery-empty");
@@ -36,6 +40,7 @@
   let account = null;
 
   function renderGallery() {
+    if (!form) return;
     const query = search.value.trim().toLowerCase();
     list.replaceChildren();
     for (const project of projects) {
@@ -146,26 +151,28 @@
         }
         avatar.querySelector("strong").textContent = account.name;
       }
-      search.parentElement.hidden = !projects.length;
+      if (search) search.parentElement.hidden = !projects.length;
       renderGallery();
     } catch {
       projects = [];
       account = null;
-      list.replaceChildren();
+      if (list) list.replaceChildren();
       signin.hidden = false;
       if (landingSignin) landingSignin.hidden = false;
       avatar.hidden = true;
-      search.parentElement.hidden = true;
-      empty.hidden = false;
-      empty.textContent = "Your gallery is temporarily unavailable.";
+      if (search) search.parentElement.hidden = true;
+      if (empty) {
+        empty.hidden = false;
+        empty.textContent = "Your gallery is temporarily unavailable.";
+      }
     }
   }
-  search.addEventListener("input", renderGallery);
+  search?.addEventListener("input", renderGallery);
   window.addEventListener("pageshow", event => { if (event.persisted) loadAccount(); });
   document.addEventListener("visibilitychange", () => { if (!document.hidden) loadAccount(); });
   loadAccount();
 
-  form.addEventListener("submit", async event => {
+  form?.addEventListener("submit", async event => {
     event.preventDefault();
     button.disabled = true;
     result.hidden = false;

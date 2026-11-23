@@ -15,9 +15,13 @@ function markup(path) {
     .replace(/<link\b[^>]*>/gi, '');
 }
 const home = markup('index');
-assert.ok(home.includes('id="history-list"'));
+const workspace = markup('workspace');
+assert.ok(home.includes('id="home-title"'));
+assert.ok(workspace.includes('id="history-list"'));
 const workspaceScript = readFileSync(new URL('../public/workspace.js', import.meta.url), 'utf8');
-const html = '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>RepoPlay</title><style>' + css + '</style><script defer src="/workspace.js"></script></head><body>' + home + '</body></html>';
+function renderDocument(content) {
+  return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>RepoPlay</title><style>' + css + '</style><script defer src="/workspace.js"></script></head><body>' + content + '</body></html>';
+}
 const sources = ['lib/temporary-preview.ts', 'lib/source-preview-runtime.js', 'lib/repoplay-auth.ts', 'lib/gallery-history.ts', 'app/api/account/route.ts', 'app/api/temporary-previews/route.ts', 'app/temporary/[token]/route.ts'];
 const shared = sources.map((path, index) => {
   const source = readFileSync(new URL('../' + path, import.meta.url), 'utf8')
@@ -29,13 +33,14 @@ const shared = sources.map((path, index) => {
 
 const worker = `
 ${shared}
-const homeHtml = ${JSON.stringify(html)};
+const homeHtml = ${JSON.stringify(renderDocument(home))};
+const workspaceHtml = ${JSON.stringify(renderDocument(workspace))};
 const workspaceJs = ${JSON.stringify(workspaceScript)};
 export default {
   async fetch(request, env) {
     const { pathname } = new URL(request.url);
-    if (pathname === '/' && request.method === 'GET') {
-      return new Response(homeHtml, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+    if ((pathname === '/' || pathname === '/workspace') && request.method === 'GET') {
+      return new Response(pathname === '/' ? homeHtml : workspaceHtml, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
     }
     if (pathname === '/workspace.js' && request.method === 'GET') {
       return new Response(workspaceJs, { headers: { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' } });

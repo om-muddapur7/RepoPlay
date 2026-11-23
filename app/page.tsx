@@ -1,93 +1,65 @@
-import { TemporaryPreviewForm } from "../components/temporary-preview-form";
-import { ProjectArt } from "../components/project-art";
-import { projects } from "../lib/catalog";
-
 const benefits = [
-  { title: "Try the actual app", description: "Click through a live preview before deciding whether to clone the repository." },
-  { title: "Skip the local setup", description: "Supported React + Vite projects build in your browser. Existing Vercel demos open in the viewer." },
-  { title: "Keep what worked", description: "Find successfully rendered previews in your private gallery and open them again." },
+  { title: "Try the actual app", description: "Click through a live demo before you clone the repository." },
+  { title: "Skip the local setup", description: "Run supported React + Vite projects in your browser, or open an existing Vercel demo." },
+  { title: "Keep what worked", description: "Successfully rendered projects stay in your private gallery so you can revisit them." },
 ];
 
 const plans = [
-  { title: "Free trial", price: "$0", period: "", description: "Preview 2 websites for 10 minutes each." },
-  { title: "Weekly", price: "$5", period: "/ week", description: "One week of access." },
-  { title: "Monthly", price: "$18", period: "/ month", description: "One month of access." },
+  { title: "Free trial", price: "$0", period: "", features: ["2 website previews", "10 minutes per preview"] },
+  { title: "Weekly", price: "$5", period: "/ week", features: ["7 days of access", "Private project gallery", "Reopen saved projects"] },
+  { title: "Monthly", price: "$18", period: "/ month", features: ["1 month of access", "Private project gallery", "Reopen saved projects"] },
 ];
 
 export default function HomePage() {
   return (
-    <main className="shell workspace">
+    <main className="shell workspace landing">
       <section className="workspace-intro landing-hero" aria-labelledby="home-title">
         <h1 id="home-title">RepoPlay</h1>
-        <p>Turn a public GitHub repository into an interactive, ten-minute preview. Try the app right in your browser, then come back to the projects you liked.</p>
+        <p>Paste a public GitHub link and try the project as a quick demo in your browser.</p>
         <div className="landing-actions">
-          <a className="button" id="landing-signin" href="/signin">Sign in with Google</a>
-          <a className="quiet-button" id="landing-workspace" href="#preview">Try a repository</a>
+          <a className="button" href="/workspace">Open workspace</a>
+          <a className="quiet-button" id="landing-signin" href="/signin">Sign in with Google</a>
         </div>
       </section>
-      <section className="landing-section" aria-labelledby="benefits-title">
-        <h2 id="benefits-title">Why RepoPlay?</h2>
+
+      <section className="landing-section" id="about" aria-labelledby="benefits-title">
+        <div className="landing-heading">
+          <h2 id="benefits-title">What RepoPlay does</h2>
+          <p>RepoPlay opens an existing demo or builds a supported frontend from its public GitHub source. You can interact with the app as soon as it renders.</p>
+        </div>
         <ul className="landing-grid">
           {benefits.map(benefit => (
             <li className="landing-card" key={benefit.title}>
-              <h3>{benefit.title}</h3><p>{benefit.description}</p>
+              <h3>{benefit.title}</h3>
+              <p>{benefit.description}</p>
             </li>
           ))}
         </ul>
       </section>
+
       <section className="landing-section" id="pricing" aria-labelledby="pricing-title">
-        <h2 id="pricing-title">Pricing</h2>
-        <p className="pricing-note">Planned pricing. Checkout and plan limits aren’t active yet.</p>
+        <div className="landing-heading">
+          <h2 id="pricing-title">Pricing</h2>
+          <p>Planned pricing. Checkout and plan limits aren’t active yet.</p>
+        </div>
         <ul className="landing-grid">
-          {plans.map(plan => (
+          {plans.map((plan, index) => (
             <li className="landing-card plan-card" key={plan.title}>
               <h3>{plan.title}</h3>
               <p className="plan-price"><strong>{plan.price}</strong>{plan.period && <span>{plan.period}</span>}</p>
-              <p>{plan.description}</p>
+              <ul className="plan-features">
+                {plan.features.map(feature => <li key={feature}>{feature}</li>)}
+              </ul>
+              {index === 0 ? <a className="quiet-button plan-action" href="/workspace">Try free</a> : (
+                <details className="plan-action">
+                  <summary className="button">Subscribe</summary>
+                  <p role="status">Checkout is coming soon.</p>
+                </details>
+              )}
             </li>
           ))}
         </ul>
       </section>
-      <section className="landing-section" id="preview" aria-labelledby="preview-title">
-        <h2 id="preview-title">Preview a repository</h2>
-        <TemporaryPreviewForm />
-      </section>
-      <section id="gallery" className="private-gallery" aria-labelledby="gallery-title">
-        <div className="gallery-titlebar">
-          <div><h2 id="gallery-title">Your projects</h2><p id="gallery-caption">Successfully rendered previews, visible only to you.</p></div>
-          <label className="gallery-search" hidden><span className="sr-only">Search your projects</span><input type="search" placeholder="Search projects" /></label>
-        </div>
-        <p className="gallery-empty" id="gallery-empty" role="status">Checking your account…</p>
-        <p id="gallery-notice" role="status"></p>
-        <ul className="history-list" id="history-list" aria-label="Your rendered projects"></ul>
-      </section>
-      <section className="private-gallery" aria-labelledby="sample-title">
-        <div className="gallery-titlebar">
-          <div><h2 id="sample-title">Sample projects</h2><p>Three interactive demos to try.</p></div>
-        </div>
-        <ul className="history-list sample-list">
-          {projects.map(project => (
-            <li key={project.slug}>
-              <ProjectArt theme={project.theme} />
-              <div className="gallery-card-body">
-                <h3>{project.title}</h3>
-                <p>{project.description}</p>
-                <div className="gallery-card-actions">
-                  <a className="quiet-button" href={project.demo} target="_blank" rel="noopener noreferrer">Open demo</a>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </section>
-      <footer className="landing-footer">
-        <p>Built by <strong>Om Muddapur</strong></p>
-        <nav aria-label="Om Muddapur links">
-          <a href="https://github.com/om-muddapur7" target="_blank" rel="noopener noreferrer">GitHub</a>
-          <a href="https://om-portfolio-plum.vercel.app/" target="_blank" rel="noopener noreferrer">Portfolio</a>
-          <a href="https://x.com/Om7248" target="_blank" rel="noopener noreferrer">X</a>
-        </nav>
-      </footer>
     </main>
   );
 }
