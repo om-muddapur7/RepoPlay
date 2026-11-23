@@ -29,6 +29,7 @@ async function createTemporaryPreview(request: Request, secret: string | undefin
   const repo = typeof payload?.repository === "string" && repositoryFromUrl(payload.repository.trim());
   if (!repo) return reply({ error: "Enter a public GitHub repository URL such as https://github.com/owner/repo." }, 400);
 
+  const frontendOnly = payload?.mode === "frontend";
   let stage = "GitHub";
   try {
     const url = `https://api.github.com/repos/${encodeURIComponent(repo.owner)}/${encodeURIComponent(repo.name)}`;
@@ -44,7 +45,7 @@ async function createTemporaryPreview(request: Request, secret: string | undefin
     const description = typeof metadata?.description === "string" ? metadata.description.trim().slice(0, 140) : undefined;
     const origin = supportedHomepage(metadata?.homepage);
     if (metadata?.private) return reply({ error: "Use a public GitHub repository." }, 422);
-    if (origin) {
+    if (origin && !frontendOnly) {
       stage = "Vercel";
       const homepage = await fetchHomepage(origin).catch(() => null);
       await homepage?.body?.cancel();
@@ -57,7 +58,8 @@ async function createTemporaryPreview(request: Request, secret: string | undefin
     }
 
     stage = "GitHub";
-    const source = await findSourcePreview(repo.owner, repo.name);
+    const source = await findSourcePreview(repo.owner, repo.name, frontendOnly);
+    if (!source && frontendOnly) return reply({ error: "No compatible static or React + Vite frontend was found." }, 422);
     if (!source) return reply({ error: "Source previews support static sites with a root index.html and compatible React + Vite apps." }, 422);
     stage = "preview signing";
     const { token, expiresAt } = await createPreviewToken({ source, description }, Date.now(), secret, userId);

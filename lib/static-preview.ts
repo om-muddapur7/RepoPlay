@@ -26,8 +26,9 @@ export async function serveStaticAsset(request: Request, token: string, segments
 
   const { owner, name, commit } = preview.source;
   const path = segments.map(encodeURIComponent).join("/");
-  const base = `https://raw.githubusercontent.com/${owner}/${name}/${commit}/`;
-  const mirror = `https://cdn.jsdelivr.net/gh/${owner}/${name}@${commit}/`;
+  const directory = preview.source.directory ? preview.source.directory + "/" : "";
+  const base = `https://raw.githubusercontent.com/${owner}/${name}/${commit}/${directory}`;
+  const mirror = `https://cdn.jsdelivr.net/gh/${owner}/${name}@${commit}/${directory}`;
   const get = (url: string) => fetch(url, { redirect: "manual", signal: AbortSignal.timeout(5000) }).catch(() => null);
   let upstream = await get(base + path);
   if (!upstream || (!upstream.ok && upstream.status !== 404)) {

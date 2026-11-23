@@ -54,6 +54,8 @@ The initial schema defines profiles, categories, projects, and demo launch event
 
 Paste a public GitHub repository URL into the preview form. RepoPlay embeds a working public Vercel deployment from the repository’s Website field when available. Source previews also support static sites with a root index.html, relative CSS, JavaScript and image paths, and links between HTML pages. For an unhosted React + Vite app, it pins the default branch to a commit and compiles the source inside a sandboxed browser frame. Source previews support Vite's `src/main` convention, a standard `root` element, local imports, CSS, common image formats, React, and React Router. React Router uses in-memory navigation in this mode. RepoPlay does not execute install scripts or Vite config and does not provide backend services or environment secrets.
 
+Select **Frontend demo** to build directly from source and check the usual frontend folders (`frontend`, `client`, and `web`) as well as the repository root. AI Expense Tracker uses its nested React frontend with sample transactions and simulated insights. Edits in that demo are kept only in memory during the preview.
+
 Preview creation and viewing require a Google session. RepoPlay encrypts each preview link with authenticated encryption tied to the verified Supabase user ID. Signed-out visitors and other accounts receive HTTP 404. The owner gets HTTP 410 after ten minutes, and the live viewer removes its iframe. RepoPlay stores no deployment files or database row to clean up. GitHub source files remain available independently.
 
 ### Google sign-in

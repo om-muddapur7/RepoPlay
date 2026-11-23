@@ -86,6 +86,7 @@
       open.textContent = "Preview again";
       open.addEventListener("click", () => {
         input.value = project.repository;
+        form.elements.frontendOnly.checked = project.mode === "frontend";
         input.focus();
         form.requestSubmit();
       });
@@ -180,7 +181,7 @@
     try {
       const response = await fetch("/api/temporary-previews", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ repository: input.value }),
+        body: JSON.stringify({ repository: input.value, mode: form.elements.frontendOnly.checked ? "frontend" : undefined }),
       });
       if (response.status === 401) {
         window.location.assign("/signin");

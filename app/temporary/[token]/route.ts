@@ -1,4 +1,4 @@
-import { createPreviewToken, PREVIEW_DURATION_MS, previewHeaders, readPreviewToken } from "../../../lib/temporary-preview";
+import { createPreviewToken, isExpenseTrackerDemo, PREVIEW_DURATION_MS, previewHeaders, readPreviewToken } from "../../../lib/temporary-preview";
 import { sourcePreviewRuntime } from "../../../lib/source-preview-runtime";
 import { authContext, type AuthEnv } from "../../../lib/repoplay-auth";
 import { galleryEntries } from "../../../lib/gallery-history";
@@ -27,7 +27,7 @@ async function recordRenderedPreview(request: Request, token: string, env: AuthE
   const projects = galleryEntries(user.user_metadata.repoplay_rendered)
     .filter(item => item.repository.toLowerCase() !== repository.toLowerCase());
   const { error } = await auth.client.auth.updateUser({
-    data: { repoplay_rendered: [{ repository, description: preview.description, renderedAt: Date.now() }, ...projects].slice(0, 100) },
+    data: { repoplay_rendered: [{ repository, description: preview.description, renderedAt: Date.now(), mode: "source" in preview && preview.source.frontendOnly ? "frontend" : undefined }, ...projects].slice(0, 100) },
   });
   return auth.apply(new Response(null, { status: error ? 503 : 204 }));
 }
@@ -48,10 +48,12 @@ async function serveTemporaryPreview(request: Request, token: string, secret: st
   const nonce = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(18))));
   const staticSource = "source" in preview && preview.source.entry === "index.html" ? preview.source : null;
   if (!staticSource && "source" in preview && new URL(request.url).searchParams.has("source")) {
-    const source = JSON.stringify({ ...preview.source, expiresAt: preview.expiresAt });
+    const expenseTrackerDemo = isExpenseTrackerDemo(preview.source);
+    const source = JSON.stringify({ ...preview.source, expenseTrackerDemo, expiresAt: preview.expiresAt });
     return new Response(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Source preview</title></head>
       <body><p id="build-status" role="status">Building project from GitHub…</p><div id="root"></div>
       <script nonce="${nonce}">window.repoPlaySource = ${source};</script>
+      ${expenseTrackerDemo ? `<script nonce="${nonce}" src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.0"></script>` : ""}
       <script nonce="${nonce}" src="https://cdn.jsdelivr.net/npm/esbuild-wasm@0.25.12/lib/browser.min.js"></script>
       <script nonce="${nonce}">(${sourcePreviewRuntime.toString()})();</script></body></html>`, {
       headers: {
@@ -69,7 +71,7 @@ async function serveTemporaryPreview(request: Request, token: string, secret: st
   const frameSandbox = "origin" in preview ? "allow-scripts allow-same-origin" : "allow-scripts";
   const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Temporary preview · RepoPlay</title>
   <style nonce="${nonce}">:root{color-scheme:dark;--bg:#05070d;--panel:#101a2c;--text:#edf4ff;--accent:#a6c6ff;--border:#2a4166}:root[data-theme=light]{color-scheme:light;--bg:#edf3fc;--panel:#f8fbff;--text:#14213a;--accent:#244e99;--border:#c6d5ed}body{margin:0;min-height:100dvh;display:flex;flex-direction:column;background:var(--bg);color:var(--text);font:16px system-ui}header{padding:12px 20px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;background:var(--panel);border-bottom:1px solid var(--border)}a{color:var(--accent)}button{border:1px solid var(--border);border-radius:8px;padding:7px 10px;background:var(--bg);color:var(--text);font:inherit;cursor:pointer}iframe{display:block;width:100%;flex:1;border:0;background:white}#save-status{font-size:.875rem}</style></head>
-  <body><header><a href="/workspace#gallery">RepoPlay</a><strong id="status">Temporary preview</strong>${"origin" in preview ? '<button id="confirm" hidden>Preview is visible</button>' : ""}<span role="status" id="save-status"></span></header>
+  <body><header><a href="/workspace#gallery">RepoPlay</a><strong id="status">Temporary preview</strong>${"origin" in preview ? '<button id="confirm" hidden>Preview is visible</button>' : ""}${"source" in preview && preview.source.frontendOnly ? '<span>Frontend demo · Backend services disabled</span>' : ""}<span role="status" id="save-status"></span></header>
   <iframe title="Repository preview" src="${frameHref}" sandbox="${frameSandbox}" referrerpolicy="no-referrer"></iframe>
   <script nonce="${nonce}">
   try { document.documentElement.dataset.theme = localStorage.getItem('repoplay-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); } catch {}

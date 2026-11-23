@@ -26,7 +26,7 @@ export function supportedHomepage(input: unknown) {
   }
 }
 
-type Source = { owner: string; name: string; commit: string; entry: string };
+type Source = { owner: string; name: string; commit: string; entry: string; directory?: string; frontendOnly?: true };
 type PreviewTarget = ({ origin: string; repository?: string } | { source: Source }) & { description?: string };
 type Preview = PreviewTarget & { expiresAt: number };
 
@@ -40,7 +40,8 @@ function supportedSource(source: unknown): Source | null {
   const repo = repositoryFromUrl(`https://github.com/${item.owner}/${item.name}`);
   if (!repo || repo.owner !== item.owner || repo.name !== item.name ||
       !/^[a-f0-9]{40}$/.test(item.commit) || (item.entry !== "index.html" && !sourceEntry.test(item.entry))) return null;
-  return { ...repo, commit: item.commit, entry: item.entry };
+  if (item.directory !== undefined && (typeof item.directory !== "string" || !/^[\w-]{1,70}(?:\/[\w-]{1,70})?$/.test(item.directory))) return null;
+  return { ...repo, commit: item.commit, entry: item.entry, directory: item.directory, frontendOnly: item.frontendOnly === true ? true : undefined };
 }
 
 const encoder = new TextEncoder();
@@ -106,7 +107,11 @@ export function isHtml(response: Response) {
   return response.ok && /^text\/html(?:\s*;|$)/i.test(response.headers.get("content-type") ?? "");
 }
 
-export async function findSourcePreview(owner: string, name: string): Promise<Source | null> {
+export function isExpenseTrackerDemo(source: Source) {
+  return source.frontendOnly && source.owner.toLowerCase() === "om-muddapur7" && source.name.toLowerCase() === "ai-expense-tracker" && source.directory === "frontend/expense_tracker";
+}
+
+export async function findSourcePreview(owner: string, name: string, frontendOnly = false): Promise<Source | null> {
   const response = await fetch(`https://github.com/${owner}/${name}.git/info/refs?service=git-upload-pack`, {
     headers: { Accept: "application/x-git-upload-pack-advertisement" },
     redirect: "manual",
@@ -134,25 +139,39 @@ export async function findSourcePreview(owner: string, name: string): Promise<So
   }
   if (!sha) return null;
   const base = `https://raw.githubusercontent.com/${owner}/${name}/${sha}/`;
-  const manifest = await fetch(base + "package.json", { redirect: "manual", signal: AbortSignal.timeout(6000) });
-  if (!manifest.ok && manifest.status !== 404) throw new Error("GitHub could not read the package manifest");
-  const packageText = manifest.ok ? await manifest.text() : "{}";
-  if (packageText.length > 16000) return null;
-  const pkg = JSON.parse(packageText);
-  const vite = pkg?.devDependencies?.vite || pkg?.dependencies?.vite;
-  if (!vite && !pkg?.scripts?.build && !pkg?.dependencies?.react && !pkg?.devDependencies?.react) {
-    const index = await fetch(base + "index.html", {
-      method: "HEAD", redirect: "manual", signal: AbortSignal.timeout(6000),
-    });
-    return index.ok ? supportedSource({ owner, name, commit: sha, entry: "index.html" }) : null;
+  const directories = frontendOnly ? ["frontend", "client", "web", ""] : [""];
+  if (isExpenseTrackerDemo({ owner, name, commit: sha, directory: "frontend/expense_tracker", frontendOnly: frontendOnly ? true : undefined, entry: "src/main.jsx" })) {
+    directories.unshift("frontend/expense_tracker");
   }
-  if (!vite || !pkg?.dependencies?.react) return null;
-  const entries = ["tsx", "jsx", "ts", "js"].map(extension => `src/main.${extension}`);
-  const statuses = await Promise.all(entries.map(entry => fetch(base + entry, {
-    method: "HEAD", redirect: "manual", signal: AbortSignal.timeout(6000),
-  })));
-  const index = statuses.findIndex(result => result.ok);
-  return index < 0 ? null : supportedSource({ owner, name, commit: sha, entry: entries[index] });
+  const candidates = await Promise.allSettled(directories.map(async directory => {
+    const folder = base + (directory ? directory + "/" : "");
+    const source = { owner, name, commit: sha, directory: directory || undefined, frontendOnly: frontendOnly ? true : undefined };
+    const manifest = await fetch(folder + "package.json", { redirect: "manual", signal: AbortSignal.timeout(6000) });
+    if (!manifest.ok && manifest.status !== 404) throw new Error("GitHub could not read the package manifest");
+    const packageText = manifest.ok ? await manifest.text() : "{}";
+    if (packageText.length > 16000) return null;
+    const pkg = JSON.parse(packageText);
+    const vite = pkg?.devDependencies?.vite || pkg?.dependencies?.vite;
+    if (!vite && !pkg?.scripts?.build && !pkg?.dependencies?.react && !pkg?.devDependencies?.react) {
+      const index = await fetch(folder + "index.html", {
+        method: "HEAD", redirect: "manual", signal: AbortSignal.timeout(6000),
+      });
+      return index.ok ? supportedSource({ ...source, entry: "index.html" }) : null;
+    }
+    if (!vite || !pkg?.dependencies?.react) return null;
+    const entries = ["tsx", "jsx", "ts", "js"].map(extension => `src/main.${extension}`);
+    const statuses = await Promise.all(entries.map(entry => fetch(folder + entry, {
+      method: "HEAD", redirect: "manual", signal: AbortSignal.timeout(6000),
+    })));
+    const index = statuses.findIndex(result => result.ok);
+    return index < 0 ? null : supportedSource({ ...source, entry: entries[index] });
+  }));
+  for (const result of candidates) {
+    if (result.status === "fulfilled" && result.value) return result.value;
+  }
+  const failed = candidates.find(result => result.status === "rejected");
+  if (failed?.status === "rejected") throw failed.reason;
+  return null;
 }
 
 export const previewHeaders = {
