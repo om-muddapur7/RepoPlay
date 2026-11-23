@@ -1,4 +1,5 @@
 import { Gallery } from "../components/gallery";
+import { TemporaryPreviewForm } from "../components/temporary-preview-form";
 
 export default function HomePage() {
   return (
@@ -10,6 +11,7 @@ export default function HomePage() {
           <a className="button" href="#gallery">Browse demos</a>
         </div>
       </section>
+      <TemporaryPreviewForm />
       <Gallery />
     </main>
   );

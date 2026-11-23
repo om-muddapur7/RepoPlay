@@ -50,6 +50,20 @@ The initial schema defines profiles, categories, projects, and demo launch event
 
 ## Run locally
 
+### Ten-minute repository previews
+
+Paste a public GitHub repository URL into the preview form. RepoPlay reads its GitHub Website field and serves the homepage of an existing public `*.vercel.app` deployment in a sandbox. The browser loads the site's assets from Vercel. Om-Portfolio is configured for this flow. Source-only repositories need a compatible build deployed first.
+
+The signed preview link expires ten minutes after issuance. Requests after expiry receive HTTP 410, and the live viewer removes its iframe. RepoPlay stores no deployment files or database row to clean up. The repository and the source deployment remain available independently. The sandbox limits navigation, forms, storage, and third-party requests, so some site features may be unavailable.
+
+To enable the feature, set `PREVIEW_SIGNING_SECRET` to a randomly generated server-side secret of at least 32 bytes. In PowerShell, run the following from the project directory before starting Next.js.
+
+```powershell
+$env:PREVIEW_SIGNING_SECRET = node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
+```
+
+Set the same secret through your hosting provider's secret manager for a deployed installation. Apply an edge rate limit to `POST /api/temporary-previews` before opening the service to public traffic. GitHub's public API also has request quotas.
+
 Requires Node.js 20.9 or later. On Windows PowerShell:
 
 ```powershell
