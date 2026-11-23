@@ -28,11 +28,11 @@ export async function serveStaticAsset(request: Request, token: string, segments
   const path = segments.map(encodeURIComponent).join("/");
   const base = `https://raw.githubusercontent.com/${owner}/${name}/${commit}/`;
   const mirror = `https://cdn.jsdelivr.net/gh/${owner}/${name}@${commit}/`;
-  const get = (origin: string) => fetch(origin + path, { redirect: "manual", signal: AbortSignal.timeout(5000) }).catch(() => null);
-  let upstream = await get(base);
+  const get = (url: string) => fetch(url, { redirect: "manual", signal: AbortSignal.timeout(5000) }).catch(() => null);
+  let upstream = await get(base + path);
   if (!upstream || (!upstream.ok && upstream.status !== 404)) {
     await upstream?.body?.cancel();
-    upstream = await get(mirror);
+    upstream = await get(mirror + path);
   }
   if (!upstream?.ok || !upstream.body) return reply("Source file unavailable.", upstream?.status === 404 ? 404 : 502);
   const limit = extension === "html" ? 256 * 1024 : 2 * 1024 * 1024;
