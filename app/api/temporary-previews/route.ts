@@ -1,4 +1,4 @@
-import { createPreviewToken, fetchHomepage, isHtml, previewHeaders, repositoryFromUrl, supportedHomepage } from "../../../lib/temporary-preview";
+import { createPreviewToken, fetchHomepage, findSourcePreview, isHtml, previewHeaders, repositoryFromUrl, supportedHomepage } from "../../../lib/temporary-preview";
 
 export async function POST(request: Request) {
   return createTemporaryPreview(request, process.env.PREVIEW_SIGNING_SECRET);
@@ -30,16 +30,24 @@ async function createTemporaryPreview(request: Request, secret: string | undefin
     if (!github.ok) return reply({ error: "GitHub could not check the repository. Try again shortly." }, 502);
     const metadata = await github.json();
     const origin = supportedHomepage(metadata.homepage);
-    if (!origin || metadata.private) {
-      return reply({ error: "Set the public repository’s GitHub Website field to a working Vercel deployment. RepoPlay uses the deployed build." }, 422);
+    if (metadata.private) return reply({ error: "Use a public GitHub repository." }, 422);
+    if (origin) {
+      stage = "Vercel";
+      const homepage = await fetchHomepage(origin).catch(() => null);
+      await homepage?.body?.cancel();
+      if (homepage && isHtml(homepage)) {
+        stage = "preview signing";
+        const { token, expiresAt } = await createPreviewToken(origin, Date.now(), secret);
+        return reply({ path: `/temporary/${token}`, expiresAt }, 201);
+      }
     }
 
-    stage = "Vercel";
-    const homepage = await fetchHomepage(origin);
-    await homepage.body?.cancel();
-    if (!isHtml(homepage)) return reply({ error: "The Vercel homepage did not return a working HTML page." }, 422);
+    stage = "GitHub";
+    const source = typeof metadata.default_branch === "string"
+      && await findSourcePreview(repo.owner, repo.name, metadata.default_branch);
+    if (!source) return reply({ error: "Source previews currently support React + Vite apps with a src/main entry point and supported dependencies." }, 422);
     stage = "preview signing";
-    const { token, expiresAt } = await createPreviewToken(origin, Date.now(), secret);
+    const { token, expiresAt } = await createPreviewToken({ source }, Date.now(), secret);
     return reply({ path: `/temporary/${token}`, expiresAt }, 201);
   } catch (error) {
     console.error("RepoPlay preview failed", stage, error instanceof Error ? error.name : "Unknown error");

@@ -26,7 +26,22 @@ export function supportedHomepage(input: unknown) {
   }
 }
 
-type Preview = { origin: string; expiresAt: number };
+type Source = { owner: string; name: string; commit: string; entry: string };
+type PreviewTarget = { origin: string } | { source: Source };
+type Preview = PreviewTarget & { expiresAt: number };
+
+const sourceEntry = /^src\/main\.(tsx|jsx|ts|js)$/;
+
+function supportedSource(source: unknown): Source | null {
+  if (!source || typeof source !== "object") return null;
+  const item = source as Partial<Source>;
+  if (typeof item.owner !== "string" || typeof item.name !== "string" ||
+      typeof item.commit !== "string" || typeof item.entry !== "string") return null;
+  const repo = repositoryFromUrl(`https://github.com/${item.owner}/${item.name}`);
+  if (!repo || repo.owner !== item.owner || repo.name !== item.name ||
+      !/^[a-f0-9]{40}$/.test(item.commit) || !sourceEntry.test(item.entry)) return null;
+  return { ...repo, commit: item.commit, entry: item.entry };
+}
 
 const encoder = new TextEncoder();
 
@@ -42,9 +57,10 @@ function signingKey(secret: string) {
   return crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign", "verify"]);
 }
 
-export async function createPreviewToken(origin: string, now: number, secret: string) {
+export async function createPreviewToken(target: string | PreviewTarget, now: number, secret: string) {
   const expiresAt = now + PREVIEW_DURATION_MS;
-  const body = encode(encoder.encode(JSON.stringify({ origin, expiresAt })));
+  const preview = typeof target === "string" ? { origin: target } : target;
+  const body = encode(encoder.encode(JSON.stringify({ ...preview, expiresAt })));
   const signature = await crypto.subtle.sign("HMAC", await signingKey(secret), encoder.encode(body));
   return { token: body + "." + encode(new Uint8Array(signature)), expiresAt };
 }
@@ -58,7 +74,10 @@ export async function readPreviewToken(token: string, secret: string): Promise<P
       !await crypto.subtle.verify("HMAC", await signingKey(secret), bytes, encoder.encode(body))) return null;
     const item = JSON.parse(new TextDecoder().decode(decode(body)));
     const origin = supportedHomepage(item.origin);
-    return origin && Number.isSafeInteger(item.expiresAt) ? { origin, expiresAt: item.expiresAt } : null;
+    if (!Number.isSafeInteger(item.expiresAt)) return null;
+    if (origin) return { origin, expiresAt: item.expiresAt };
+    const source = supportedSource(item.source);
+    return source ? { source, expiresAt: item.expiresAt } : null;
   } catch {
     return null;
   }
@@ -75,6 +94,31 @@ export function fetchHomepage(origin: string) {
 
 export function isHtml(response: Response) {
   return response.ok && /^text\/html(?:\s*;|$)/i.test(response.headers.get("content-type") ?? "");
+}
+
+export async function findSourcePreview(owner: string, name: string, branch: string): Promise<Source | null> {
+  const response = await fetch(`https://api.github.com/repos/${owner}/${name}/commits/${encodeURIComponent(branch)}`, {
+    headers: { Accept: "application/vnd.github+json", "User-Agent": "RepoPlay" },
+    redirect: "manual",
+    signal: AbortSignal.timeout(6000),
+    next: { revalidate: 60 },
+  });
+  if (!response.ok) throw new Error("GitHub commit lookup failed");
+  const { sha } = await response.json();
+  if (typeof sha !== "string" || !/^[a-f0-9]{40}$/.test(sha)) return null;
+  const base = `https://raw.githubusercontent.com/${owner}/${name}/${sha}/`;
+  const manifest = await fetch(base + "package.json", { redirect: "manual", signal: AbortSignal.timeout(6000) });
+  if (!manifest.ok) return null;
+  const packageText = await manifest.text();
+  if (packageText.length > 16000) return null;
+  const pkg = JSON.parse(packageText);
+  if (!pkg?.dependencies?.react || !(pkg?.devDependencies?.vite || pkg?.dependencies?.vite)) return null;
+  const entries = ["tsx", "jsx", "ts", "js"].map(extension => `src/main.${extension}`);
+  const statuses = await Promise.all(entries.map(entry => fetch(base + entry, {
+    method: "HEAD", redirect: "manual", signal: AbortSignal.timeout(6000),
+  })));
+  const index = statuses.findIndex(result => result.ok);
+  return index < 0 ? null : supportedSource({ owner, name, commit: sha, entry: entries[index] });
 }
 
 export const previewHeaders = {

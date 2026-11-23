@@ -32,7 +32,7 @@ export function TemporaryPreviewForm() {
   return (
     <section className="shell py-10" aria-labelledby="temporary-title">
       <h2 id="temporary-title" className="text-2xl font-bold">Create a 10-minute preview</h2>
-      <p className="mt-2 text-[var(--muted)]">Use a public GitHub repository with its Vercel deployment listed as its website.</p>
+      <p className="mt-2 text-[var(--muted)]">Paste a public GitHub repository. RepoPlay opens its Vercel site or builds a supported React + Vite app from source.</p>
       <form className="mt-4 flex flex-wrap items-center gap-3" onSubmit={create}>
         <label className="search grow" htmlFor="repository"><span className="sr-only">GitHub repository URL</span>
           <input id="repository" name="repository" type="url" placeholder="https://github.com/owner/repo" required maxLength={256} />

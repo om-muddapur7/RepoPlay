@@ -52,9 +52,9 @@ The initial schema defines profiles, categories, projects, and demo launch event
 
 ### Ten-minute repository previews
 
-Paste a public GitHub repository URL into the preview form. RepoPlay reads its GitHub Website field and embeds the homepage of an existing public `*.vercel.app` deployment in a sandbox. The browser loads the site's assets from Vercel. Om-Portfolio is configured for this flow. Source-only repositories need a compatible build deployed first.
+Paste a public GitHub repository URL into the preview form. RepoPlay embeds a working public Vercel deployment from the repository’s Website field when available. For an unhosted React + Vite app, it pins the default branch to a commit and compiles the source inside a sandboxed browser frame. Source previews support Vite's `src/main` convention, a standard `root` element, local imports, CSS, common image formats, React, and React Router. React Router uses in-memory navigation in this mode. RepoPlay does not execute install scripts or Vite config and does not provide backend services or environment secrets.
 
-The signed preview link expires ten minutes after issuance. Requests after expiry receive HTTP 410, and the live viewer removes its iframe. RepoPlay stores no deployment files or database row to clean up. The repository and the source deployment remain available independently. The sandbox limits navigation, forms, storage, and third-party requests, so some site features may be unavailable.
+The signed preview link expires ten minutes after issuance. Requests after expiry receive HTTP 410, and the live viewer removes its iframe. RepoPlay stores no deployment files or database row to clean up. GitHub source files remain available independently. The sandbox limits navigation, forms, storage, and third-party requests, so some site features may be unavailable.
 
 To enable the feature, set `PREVIEW_SIGNING_SECRET` to a randomly generated server-side secret of at least 32 bytes. In PowerShell, run the following from the project directory before starting Next.js.
 

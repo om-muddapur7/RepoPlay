@@ -109,6 +109,7 @@ const shared = sources.map(path => {
 const worker = `
 ${shared}
 const homeHtml = ${JSON.stringify(html)};
+const sourceRuntime = ${JSON.stringify(readFileSync(new URL('../public/repoplay-source-preview.js', import.meta.url), 'utf8'))};
 export default {
   async fetch(request, env) {
     const { pathname } = new URL(request.url);
@@ -118,8 +119,11 @@ export default {
     if (pathname === '/api/temporary-previews' && request.method === 'POST') {
       return createTemporaryPreview(request, env.PREVIEW_SIGNING_SECRET);
     }
+    if (pathname === '/repoplay-source-preview.js' && request.method === 'GET') {
+      return new Response(sourceRuntime, { headers: { 'Content-Type': 'text/javascript; charset=utf-8', 'X-Content-Type-Options': 'nosniff', 'Cache-Control': 'no-cache' } });
+    }
     if (pathname.startsWith('/temporary/') && request.method === 'GET') {
-      return serveTemporaryPreview(pathname.slice('/temporary/'.length), env.PREVIEW_SIGNING_SECRET);
+      return serveTemporaryPreview(request, pathname.slice('/temporary/'.length), env.PREVIEW_SIGNING_SECRET);
     }
     return new Response('Not found.', { status: 404 });
   },
