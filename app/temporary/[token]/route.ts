@@ -1,7 +1,8 @@
-import { previewHeaders, readPreviewToken } from "../../../lib/temporary-preview";
+import { createPreviewToken, PREVIEW_DURATION_MS, previewHeaders, readPreviewToken } from "../../../lib/temporary-preview";
 import { sourcePreviewRuntime } from "../../../lib/source-preview-runtime";
 import { authContext, type AuthEnv } from "../../../lib/repoplay-auth";
 import { galleryEntries } from "../../../lib/gallery-history";
+import { STATIC_CONTENT_AUDIENCE } from "../../../lib/static-preview";
 
 export async function GET(request: Request, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
@@ -45,7 +46,8 @@ async function serveTemporaryPreview(request: Request, token: string, secret: st
   if (Date.now() >= preview.expiresAt) return new Response("This RepoPlay preview has expired.", { status: 410, headers: previewHeaders });
 
   const nonce = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(18))));
-  if ("source" in preview && new URL(request.url).searchParams.has("source")) {
+  const staticSource = "source" in preview && preview.source.entry === "index.html" ? preview.source : null;
+  if (!staticSource && "source" in preview && new URL(request.url).searchParams.has("source")) {
     const source = JSON.stringify({ ...preview.source, expiresAt: preview.expiresAt });
     return new Response(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Source preview</title></head>
       <body><p id="build-status" role="status">Building project from GitHub…</p><div id="root"></div>
@@ -59,7 +61,10 @@ async function serveTemporaryPreview(request: Request, token: string, secret: st
       },
     });
   }
-  const frameHref = "origin" in preview ? preview.origin + "/" : "?source=1";
+  const staticGrant = staticSource
+    ? await createPreviewToken({ source: staticSource }, preview.expiresAt - PREVIEW_DURATION_MS, secret!, STATIC_CONTENT_AUDIENCE)
+    : null;
+  const frameHref = staticGrant ? `/static-preview/${staticGrant.token}/index.html` : "origin" in preview ? preview.origin + "/" : "?source=1";
   const framePolicy = "origin" in preview ? preview.origin : "'self'";
   const frameSandbox = "origin" in preview ? "allow-scripts allow-same-origin" : "allow-scripts";
   const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Temporary preview · RepoPlay</title>

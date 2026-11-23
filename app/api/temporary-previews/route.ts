@@ -58,7 +58,7 @@ async function createTemporaryPreview(request: Request, secret: string | undefin
 
     stage = "GitHub";
     const source = await findSourcePreview(repo.owner, repo.name);
-    if (!source) return reply({ error: "Source previews currently support React + Vite apps with a src/main entry point and supported dependencies." }, 422);
+    if (!source) return reply({ error: "Source previews support static sites with a root index.html and compatible React + Vite apps." }, 422);
     stage = "preview signing";
     const { token, expiresAt } = await createPreviewToken({ source, description }, Date.now(), secret, userId);
     return reply({ path: `/temporary/${token}`, expiresAt }, 201);

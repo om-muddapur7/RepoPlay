@@ -39,7 +39,7 @@ function supportedSource(source: unknown): Source | null {
       typeof item.commit !== "string" || typeof item.entry !== "string") return null;
   const repo = repositoryFromUrl(`https://github.com/${item.owner}/${item.name}`);
   if (!repo || repo.owner !== item.owner || repo.name !== item.name ||
-      !/^[a-f0-9]{40}$/.test(item.commit) || !sourceEntry.test(item.entry)) return null;
+      !/^[a-f0-9]{40}$/.test(item.commit) || (item.entry !== "index.html" && !sourceEntry.test(item.entry))) return null;
   return { ...repo, commit: item.commit, entry: item.entry };
 }
 
@@ -135,11 +135,18 @@ export async function findSourcePreview(owner: string, name: string): Promise<So
   if (!sha) return null;
   const base = `https://raw.githubusercontent.com/${owner}/${name}/${sha}/`;
   const manifest = await fetch(base + "package.json", { redirect: "manual", signal: AbortSignal.timeout(6000) });
-  if (!manifest.ok) return null;
-  const packageText = await manifest.text();
+  if (!manifest.ok && manifest.status !== 404) throw new Error("GitHub could not read the package manifest");
+  const packageText = manifest.ok ? await manifest.text() : "{}";
   if (packageText.length > 16000) return null;
   const pkg = JSON.parse(packageText);
-  if (!pkg?.dependencies?.react || !(pkg?.devDependencies?.vite || pkg?.dependencies?.vite)) return null;
+  const vite = pkg?.devDependencies?.vite || pkg?.dependencies?.vite;
+  if (!vite && !pkg?.scripts?.build && !pkg?.dependencies?.react && !pkg?.devDependencies?.react) {
+    const index = await fetch(base + "index.html", {
+      method: "HEAD", redirect: "manual", signal: AbortSignal.timeout(6000),
+    });
+    return index.ok ? supportedSource({ owner, name, commit: sha, entry: "index.html" }) : null;
+  }
+  if (!vite || !pkg?.dependencies?.react) return null;
   const entries = ["tsx", "jsx", "ts", "js"].map(extension => `src/main.${extension}`);
   const statuses = await Promise.all(entries.map(entry => fetch(base + entry, {
     method: "HEAD", redirect: "manual", signal: AbortSignal.timeout(6000),

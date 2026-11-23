@@ -22,7 +22,7 @@ const workspaceScript = readFileSync(new URL('../public/workspace.js', import.me
 function renderDocument(content) {
   return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>RepoPlay</title><style>' + css + '</style><script defer src="/workspace.js"></script></head><body>' + content + '</body></html>';
 }
-const sources = ['lib/temporary-preview.ts', 'lib/source-preview-runtime.js', 'lib/repoplay-auth.ts', 'lib/gallery-history.ts', 'app/api/account/route.ts', 'app/api/temporary-previews/route.ts', 'app/temporary/[token]/route.ts'];
+const sources = ['lib/temporary-preview.ts', 'lib/static-preview.ts', 'lib/source-preview-runtime.js', 'lib/repoplay-auth.ts', 'lib/gallery-history.ts', 'app/api/account/route.ts', 'app/api/temporary-previews/route.ts', 'app/temporary/[token]/route.ts'];
 const shared = sources.map((path, index) => {
   const source = readFileSync(new URL('../' + path, import.meta.url), 'utf8')
     .replace(/^import .* from ["']\.{1,2}\/.*;\r?\n/gm, '')
@@ -59,6 +59,10 @@ export default {
     }
     if (pathname.startsWith('/temporary/') && request.method === 'GET') {
       return authenticatedViewer(request, pathname.slice('/temporary/'.length), env);
+    }
+    if (pathname.startsWith('/static-preview/') && request.method === 'GET') {
+      const [, , token, ...segments] = pathname.split('/');
+      return serveStaticAsset(request, token, segments, env.PREVIEW_SIGNING_SECRET);
     }
     if (pathname === '/signin' && request.method === 'GET') {
       return signInPage(request, env);

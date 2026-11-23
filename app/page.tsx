@@ -1,6 +1,6 @@
 const benefits = [
   { title: "Try the actual app", description: "Click through a live demo before you clone the repository." },
-  { title: "Skip the local setup", description: "Run supported React + Vite projects in your browser, or open an existing Vercel demo." },
+  { title: "Skip the local setup", description: "Try plain HTML, CSS, and JavaScript sites, supported React + Vite projects, or existing Vercel demos." },
   { title: "Keep what worked", description: "Successfully rendered projects stay in your private gallery so you can revisit them." },
 ];
 
