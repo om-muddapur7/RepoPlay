@@ -44,8 +44,11 @@ export default function HomePage() {
         </div>
         <ul className="landing-grid">
           {plans.map((plan, index) => (
-            <li className="landing-card plan-card" key={plan.title}>
-              <h3>{plan.title}</h3>
+            <li className={`landing-card plan-card${index === 0 ? " current-plan" : ""}`} key={plan.title}>
+              <div className="plan-heading">
+                <h3>{plan.title}</h3>
+                {index === 0 && <span className="plan-badge">Current plan</span>}
+              </div>
               <p className="plan-price"><strong>{plan.price}</strong>{plan.period && <span>{plan.period}</span>}</p>
               <ul className="plan-features">
                 {plan.features.map(feature => <li key={feature}>{feature}</li>)}

@@ -81,40 +81,40 @@ a, button, input { outline-offset: 4px; }
 
 :root {
   color-scheme: dark;
-  --background: #17151e;
-  --surface: #221e2e;
-  --glass: #2a2438b9;
-  --border: #494052;
-  --text: #faf3ec;
-  --muted: #c9bac4;
-  --accent: #efba9d;
-  --accent-text: #322037;
-  --glow: #392b44;
+  --background: #05070d;
+  --surface: #101a2c;
+  --glass: #152541a8;
+  --border: #2a4166;
+  --text: #edf4ff;
+  --muted: #a8bad7;
+  --accent: #a6c6ff;
+  --accent-text: #0b1934;
+  --glow: #142b53;
 }
 :root[data-theme="light"] {
   color-scheme: light;
-  --background: #f8f1eb;
-  --surface: #fffaf7;
+  --background: #edf3fc;
+  --surface: #f8fbff;
   --glass: #ffffffe0;
-  --border: #dccdd9;
-  --text: #2c2038;
-  --muted: #64536a;
-  --accent: #70476c;
+  --border: #c6d5ed;
+  --text: #14213a;
+  --muted: #485e80;
+  --accent: #244e99;
   --accent-text: #fff;
-  --glow: #eedfeb;
+  --glow: #cfdef7;
 }
 @media (prefers-color-scheme: light) {
   :root:not([data-theme]) {
     color-scheme: light;
-    --background: #f8f1eb;
-    --surface: #fffaf7;
+    --background: #edf3fc;
+    --surface: #f8fbff;
     --glass: #ffffffe0;
-    --border: #dccdd9;
-    --text: #2c2038;
-    --muted: #64536a;
-    --accent: #70476c;
+    --border: #c6d5ed;
+    --text: #14213a;
+    --muted: #485e80;
+    --accent: #244e99;
     --accent-text: #fff;
-    --glow: #eedfeb;
+    --glow: #cfdef7;
   }
 }
 body {
@@ -306,6 +306,17 @@ body {
 .plan-action summary { list-style: none; }
 .plan-action summary::-webkit-details-marker { display: none; }
 .plan-action p { margin: 8px 0 0; font-size: .875rem; }
+.plan-heading { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; column-gap: 10px; }
+.current-plan { border-color: color-mix(in srgb, var(--accent), var(--border) 48%); }
+.plan-badge {
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  color: var(--accent);
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: .75rem;
+  font-weight: 700;
+}
 .landing-footer { display: grid; justify-content: center; justify-items: center; gap: 13px; margin: 0 auto; padding: 28px 0 36px; }
 .landing-footer p { font-size: 1.02rem; }
 .landing-footer .section-links { flex-wrap: wrap; justify-content: center; }
