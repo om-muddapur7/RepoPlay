@@ -106,16 +106,33 @@ export function isHtml(response: Response) {
   return response.ok && /^text\/html(?:\s*;|$)/i.test(response.headers.get("content-type") ?? "");
 }
 
-export async function findSourcePreview(owner: string, name: string, branch: string): Promise<Source | null> {
-  const response = await fetch(`https://api.github.com/repos/${owner}/${name}/commits/${encodeURIComponent(branch)}`, {
-    headers: { Accept: "application/vnd.github+json", "User-Agent": "RepoPlay" },
+export async function findSourcePreview(owner: string, name: string): Promise<Source | null> {
+  const response = await fetch(`https://github.com/${owner}/${name}.git/info/refs?service=git-upload-pack`, {
+    headers: { Accept: "application/x-git-upload-pack-advertisement" },
     redirect: "manual",
     signal: AbortSignal.timeout(6000),
     next: { revalidate: 60 },
   });
-  if (!response.ok) throw new Error("GitHub commit lookup failed");
-  const { sha } = await response.json();
-  if (typeof sha !== "string" || !/^[a-f0-9]{40}$/.test(sha)) return null;
+  if (!response.ok || !response.headers.get("content-type")?.startsWith("application/x-git-upload-pack-advertisement")) {
+    await response.body?.cancel();
+    throw new Error("GitHub could not advertise the repository's public HEAD");
+  }
+  const reader = response.body?.getReader();
+  if (!reader) return null;
+  const decoder = new TextDecoder();
+  let advertisement = "";
+  let sha: string | undefined;
+  try {
+    while (!sha && advertisement.length < 8192) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      advertisement += decoder.decode(value.subarray(0, 8192 - advertisement.length), { stream: true });
+      sha = /(?:^|\n)(?:0000)?[a-f0-9]{4}([a-f0-9]{40}) HEAD(?:\0|\n)/.exec(advertisement)?.[1];
+    }
+  } finally {
+    await reader.cancel();
+  }
+  if (!sha) return null;
   const base = `https://raw.githubusercontent.com/${owner}/${name}/${sha}/`;
   const manifest = await fetch(base + "package.json", { redirect: "manual", signal: AbortSignal.timeout(6000) });
   if (!manifest.ok) return null;

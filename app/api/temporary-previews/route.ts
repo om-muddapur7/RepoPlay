@@ -37,13 +37,13 @@ async function createTemporaryPreview(request: Request, secret: string | undefin
       redirect: "manual",
       signal: AbortSignal.timeout(6000),
       next: { revalidate: 60 },
-    });
-    if (github.status === 404) return reply({ error: "GitHub could not find that public repository." }, 404);
-    if (!github.ok) return reply({ error: "GitHub could not check the repository. Try again shortly." }, 502);
-    const metadata = await github.json();
-    const description = typeof metadata.description === "string" ? metadata.description.trim().slice(0, 140) : undefined;
-    const origin = supportedHomepage(metadata.homepage);
-    if (metadata.private) return reply({ error: "Use a public GitHub repository." }, 422);
+    }).catch(() => null);
+    if (github?.status === 404) return reply({ error: "GitHub could not find that public repository." }, 404);
+    const metadata = github?.ok ? await github.json() : null;
+    if (!github?.ok) await github?.body?.cancel();
+    const description = typeof metadata?.description === "string" ? metadata.description.trim().slice(0, 140) : undefined;
+    const origin = supportedHomepage(metadata?.homepage);
+    if (metadata?.private) return reply({ error: "Use a public GitHub repository." }, 422);
     if (origin) {
       stage = "Vercel";
       const homepage = await fetchHomepage(origin).catch(() => null);
@@ -57,8 +57,7 @@ async function createTemporaryPreview(request: Request, secret: string | undefin
     }
 
     stage = "GitHub";
-    const source = typeof metadata.default_branch === "string"
-      && await findSourcePreview(repo.owner, repo.name, metadata.default_branch);
+    const source = await findSourcePreview(repo.owner, repo.name);
     if (!source) return reply({ error: "Source previews currently support React + Vite apps with a src/main entry point and supported dependencies." }, 422);
     stage = "preview signing";
     const { token, expiresAt } = await createPreviewToken({ source, description }, Date.now(), secret, userId);
