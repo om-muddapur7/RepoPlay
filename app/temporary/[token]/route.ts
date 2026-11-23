@@ -1,10 +1,34 @@
 import { previewHeaders, readPreviewToken } from "../../../lib/temporary-preview";
 import { sourcePreviewRuntime } from "../../../lib/source-preview-runtime";
 import { authContext, type AuthEnv } from "../../../lib/repoplay-auth";
+import { galleryEntries } from "../../../lib/gallery-history";
 
 export async function GET(request: Request, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   return authenticatedViewer(request, token, process.env);
+}
+
+export async function POST(request: Request, { params }: { params: Promise<{ token: string }> }) {
+  return recordRenderedPreview(request, (await params).token, process.env);
+}
+
+async function recordRenderedPreview(request: Request, token: string, env: AuthEnv) {
+  const auth = authContext(request, env);
+  const missing = () => auth.apply(new Response("Preview not found.", { status: 404 }));
+  if (!auth.client || request.headers.get("origin") !== auth.origin || !env.PREVIEW_SIGNING_SECRET) return missing();
+  const user = await auth.user();
+  if (!user) return missing();
+  const preview = await readPreviewToken(token, env.PREVIEW_SIGNING_SECRET, user.id);
+  if (!preview || preview.expiresAt <= Date.now()) return missing();
+  const repository = "source" in preview
+    ? `https://github.com/${preview.source.owner}/${preview.source.name}` : preview.repository;
+  if (!repository) return missing();
+  const projects = galleryEntries(user.user_metadata.repoplay_rendered)
+    .filter(item => item.repository.toLowerCase() !== repository.toLowerCase());
+  const { error } = await auth.client.auth.updateUser({
+    data: { repoplay_rendered: [{ repository, renderedAt: Date.now() }, ...projects].slice(0, 100) },
+  });
+  return auth.apply(new Response(null, { status: error ? 503 : 204 }));
 }
 
 async function authenticatedViewer(request: Request, token: string, env: AuthEnv & { PREVIEW_SIGNING_SECRET?: string }) {
@@ -39,13 +63,39 @@ async function serveTemporaryPreview(request: Request, token: string, secret: st
   const framePolicy = "origin" in preview ? preview.origin : "'self'";
   const frameSandbox = "origin" in preview ? "allow-scripts allow-same-origin" : "allow-scripts";
   const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Temporary preview · RepoPlay</title>
-  <style nonce="${nonce}">body{margin:0;background:#0b1020;color:#f4f7fe;font:16px system-ui}header{padding:14px 20px;display:flex;gap:18px;align-items:center}a{color:#81edc4}iframe{display:block;width:100%;height:calc(100dvh - 60px);border:0;background:white}p{padding:20px}</style></head>
-  <body><header><a href="/">RepoPlay</a><strong id="status">Temporary preview</strong></header>
+  <style nonce="${nonce}">:root{color-scheme:dark;--bg:#101311;--panel:#202923;--text:#eff2e9;--accent:#c0e8a8;--border:#36473c}:root[data-theme=light]{color-scheme:light;--bg:#f0f3eb;--panel:#f9fbf5;--text:#17251c;--accent:#285939;--border:#c7d3c5}body{margin:0;min-height:100dvh;display:flex;flex-direction:column;background:var(--bg);color:var(--text);font:16px system-ui}header{padding:12px 20px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;background:var(--panel);border-bottom:1px solid var(--border)}a{color:var(--accent)}button{border:1px solid var(--border);border-radius:8px;padding:7px 10px;background:var(--bg);color:var(--text);font:inherit;cursor:pointer}iframe{display:block;width:100%;flex:1;border:0;background:white}#save-status{font-size:.875rem}</style></head>
+  <body><header><a href="/#gallery">RepoPlay</a><strong id="status">Temporary preview</strong>${"origin" in preview ? '<button id="confirm" hidden>Preview is visible</button>' : ""}<span role="status" id="save-status"></span></header>
   <iframe title="Repository preview" src="${frameHref}" sandbox="${frameSandbox}" referrerpolicy="no-referrer"></iframe>
   <script nonce="${nonce}">
+  try { document.documentElement.dataset.theme = localStorage.getItem('repoplay-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); } catch {}
   const expiry = ${preview.expiresAt};
   const frame = document.querySelector('iframe');
   const status = document.getElementById('status');
+  const confirmation = document.getElementById('confirm');
+  let saved = false;
+  async function save() {
+    if (saved || Date.now() >= expiry) return;
+    saved = true;
+    const result = document.getElementById('save-status');
+    const write = () => fetch(location.pathname, { method: 'POST' });
+    try {
+      const response = await (navigator.locks ? navigator.locks.request('repoplay-gallery', write) : write());
+      if (!response.ok) throw new Error('Save failed');
+      if (confirmation) confirmation.hidden = true;
+      result.textContent = 'Saved to your gallery';
+    } catch {
+      saved = false;
+      result.textContent = 'Could not save to your gallery';
+    }
+  }
+  if (confirmation) {
+    frame.addEventListener('load', () => { confirmation.hidden = false; });
+    confirmation.addEventListener('click', save);
+  } else {
+    window.addEventListener('message', event => {
+      if (event.source === frame.contentWindow && event.origin === 'null' && event.data === 'repoplay:rendered') save();
+    });
+  }
   function update() {
     const seconds = Math.max(0, Math.ceil((expiry - Date.now()) / 1000));
     status.textContent = seconds ? 'Preview expires in ' + Math.floor(seconds / 60) + ':' + String(seconds % 60).padStart(2, '0') : 'Preview expired';
@@ -59,7 +109,7 @@ async function serveTemporaryPreview(request: Request, token: string, secret: st
     headers: {
       ...previewHeaders,
       "Content-Type": "text/html; charset=utf-8",
-      "Content-Security-Policy": `default-src 'none'; script-src 'nonce-${nonce}'; style-src 'nonce-${nonce}'; frame-src ${framePolicy}; frame-ancestors 'none'; base-uri 'none'`,
+      "Content-Security-Policy": `default-src 'none'; script-src 'nonce-${nonce}'; style-src 'nonce-${nonce}'; connect-src 'self'; frame-src ${framePolicy}; frame-ancestors 'none'; base-uri 'none'`,
     },
   });
 }

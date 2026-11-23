@@ -58,6 +58,8 @@ Preview creation and viewing require a Google session. RepoPlay encrypts each pr
 
 ### Google sign-in
 
+The workspace displays the signed-in Google account's profile photo or initials. The private gallery keeps up to 100 distinct recently rendered repositories in that user's Supabase Auth metadata. Source previews are added after rendering content. Embedded Vercel previews are added after the user confirms the site is visible.
+
 1. In Google Cloud, configure the consent screen and create a web OAuth client. Register the callback URL shown in the Supabase Google provider settings as the Google client's authorized redirect URI.
 2. In Supabase Auth, enable Google and enter that client ID and secret. Add the exact RepoPlay URL plus `/auth/callback` to the Supabase Redirect URLs allowlist. For local development, use `http://localhost:3000/auth/callback`.
 3. Copy `.env.example` to `.env.local` and fill in `REPOPLAY_ORIGIN`, `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY`. For Sites, configure the same variables in its environment settings with the deployed site origin. Keep the Google client secret in Supabase.

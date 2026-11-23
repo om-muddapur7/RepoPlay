@@ -49,7 +49,8 @@ async function createTemporaryPreview(request: Request, secret: string | undefin
       await homepage?.body?.cancel();
       if (homepage && isHtml(homepage)) {
         stage = "preview signing";
-        const { token, expiresAt } = await createPreviewToken(origin, Date.now(), secret, userId);
+        const repository = `https://github.com/${repo.owner}/${repo.name}`;
+        const { token, expiresAt } = await createPreviewToken({ origin, repository }, Date.now(), secret, userId);
         return reply({ path: `/temporary/${token}`, expiresAt }, 201);
       }
     }

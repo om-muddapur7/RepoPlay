@@ -49,10 +49,13 @@ export function authContext(request: Request, env: AuthEnv) {
       for (const cookie of pending) headers.append("Set-Cookie", cookie);
       return new Response(response.body, { status: response.status, headers });
     },
-    async userId() {
+    async user() {
       if (!client) return null;
       const { data, error } = await client.auth.getUser();
-      return error ? null : data.user?.id ?? null;
+      return error ? null : data.user;
+    },
+    async userId() {
+      return (await this.user())?.id ?? null;
     },
   };
 }
@@ -63,8 +66,8 @@ export function signInPage(request: Request, env: AuthEnv) {
   const failed = url.searchParams.get("error") === "oauth";
   const signingOut = url.searchParams.get("mode") === "signout";
   return new Response(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Sign in · RepoPlay</title>
-  <style>body{margin:0;display:grid;place-items:center;min-height:100dvh;background:#0b1020;color:#f4f7fe;font:16px system-ui;padding:20px;box-sizing:border-box}main{width:min(100%,420px);box-sizing:border-box;padding:32px;border:1px solid #2b3651;border-radius:16px;background:#131b2e}a{color:#81edc4}h1{margin-block:18px 8px}p{color:#b0bdd4;line-height:1.55}button{font:inherit;font-weight:700;background:#81edc4;color:#10251e;border:0;border-radius:9px;padding:12px 16px;cursor:pointer}button:disabled{opacity:.6;cursor:default}form+form{margin-top:12px}</style></head>
-  <body><main><a href="/">RepoPlay</a><h1>${signingOut ? "Sign out of RepoPlay" : "Sign in to RepoPlay"}</h1>
+  <style>:root{color-scheme:dark;--bg:#101311;--glow:#334a36;--panel:#202923b5;--line:#36473c;--text:#eff2e9;--muted:#a9b8ae;--accent:#c0e8a8;--ink:#172619}:root[data-theme=light]{color-scheme:light;--bg:#f0f3eb;--glow:#d5e5cb;--panel:#ffffffe0;--line:#c7d3c5;--text:#17251c;--muted:#4d6153;--accent:#285939;--ink:white}body{margin:0;display:grid;place-items:center;min-height:100dvh;background:radial-gradient(ellipse at 80% 0%,var(--glow),transparent 58%),var(--bg);color:var(--text);font:16px system-ui;padding:20px;box-sizing:border-box}main{width:min(100%,440px);box-sizing:border-box;padding:32px;border:1px solid var(--line);border-radius:16px;background:var(--panel);backdrop-filter:blur(18px)}nav{display:flex;justify-content:space-between;align-items:center}a{color:var(--accent)}h1{margin-block:23px 8px;font:500 clamp(2rem,7vw,3rem)/1 Georgia,serif;letter-spacing:-.04em}p{color:var(--muted);line-height:1.55}button{font:inherit;font-weight:700;background:var(--accent);color:var(--ink);border:0;border-radius:8px;padding:12px 16px;cursor:pointer}button:disabled{opacity:.6;cursor:default}#theme-toggle{color:var(--text);background:transparent;border:1px solid var(--line);font-size:.875rem}</style><script defer src="/workspace.js"></script></head>
+  <body><main><nav><a href="/">RepoPlay</a><button id="theme-toggle" type="button">Light mode</button></nav><h1>${signingOut ? "Sign out of RepoPlay" : "Sign in to RepoPlay"}</h1>
   <p>${signingOut ? "End your RepoPlay session for this browser." : "Use your Google account to create and open your private previews."}</p>
   ${failed ? '<p role="alert">Google sign-in could not be completed. Please try again.</p>' : ""}
   ${!client ? '<p role="status">Google sign-in is awaiting configuration.</p>' : ""}
@@ -73,7 +76,7 @@ export function signInPage(request: Request, env: AuthEnv) {
     headers: {
       "Content-Type": "text/html; charset=utf-8",
       "Cache-Control": "private, no-store",
-      "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; form-action 'self' https:; frame-ancestors 'none'; base-uri 'none'",
+      "Content-Security-Policy": "default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; form-action 'self' https:; frame-ancestors 'none'; base-uri 'none'",
       "Referrer-Policy": "same-origin",
     },
   });

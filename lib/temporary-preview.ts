@@ -27,7 +27,7 @@ export function supportedHomepage(input: unknown) {
 }
 
 type Source = { owner: string; name: string; commit: string; entry: string };
-type PreviewTarget = { origin: string } | { source: Source };
+type PreviewTarget = { origin: string; repository?: string } | { source: Source };
 type Preview = PreviewTarget & { expiresAt: number };
 
 const sourceEntry = /^src\/main\.(tsx|jsx|ts|js)$/;
@@ -81,7 +81,10 @@ export async function readPreviewToken(token: string, secret: string, userId: st
     const item = JSON.parse(new TextDecoder().decode(decrypted));
     const origin = supportedHomepage(item.origin);
     if (!Number.isSafeInteger(item.expiresAt)) return null;
-    if (origin) return { origin, expiresAt: item.expiresAt };
+    if (origin) {
+      const repo = typeof item.repository === "string" && repositoryFromUrl(item.repository);
+      return { origin, expiresAt: item.expiresAt, repository: repo ? `https://github.com/${repo.owner}/${repo.name}` : undefined };
+    }
     const source = supportedSource(item.source);
     return source ? { source, expiresAt: item.expiresAt } : null;
   } catch {
