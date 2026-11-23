@@ -74,7 +74,7 @@ export function signInPage(request: Request, env: AuthEnv) {
       "Content-Type": "text/html; charset=utf-8",
       "Cache-Control": "private, no-store",
       "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; form-action 'self' https:; frame-ancestors 'none'; base-uri 'none'",
-      "Referrer-Policy": "no-referrer",
+      "Referrer-Policy": "same-origin",
     },
   });
 }
