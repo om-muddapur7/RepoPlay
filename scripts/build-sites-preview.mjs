@@ -22,7 +22,7 @@ const sources = ['lib/temporary-preview.ts', 'lib/source-preview-runtime.js', 'l
 const shared = sources.map((path, index) => {
   const source = readFileSync(new URL('../' + path, import.meta.url), 'utf8')
     .replace(/^import .* from ["']\.{1,2}\/.*;\r?\n/gm, '')
-    .replace(/^export (async )?function (GET|POST)\(/gm, (_, asyncKeyword, method) => `${asyncKeyword ?? ""}function route${index}${method}(`)
+    .replace(/^export (async )?function (GET|POST|DELETE)\(/gm, (_, asyncKeyword, method) => `${asyncKeyword ?? ""}function route${index}${method}(`)
     .replace(/^export /gm, '');
   return ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } }).outputText;
 }).join('\n');
@@ -42,6 +42,9 @@ export default {
     }
     if (pathname === '/api/account' && request.method === 'GET') {
       return accountDetails(request, env);
+    }
+    if (pathname === '/api/account' && request.method === 'DELETE') {
+      return removeGalleryProject(request, env);
     }
     if (pathname.startsWith('/temporary/') && request.method === 'POST') {
       return recordRenderedPreview(request, pathname.slice('/temporary/'.length), env);

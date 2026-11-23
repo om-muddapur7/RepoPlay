@@ -41,6 +41,7 @@ async function createTemporaryPreview(request: Request, secret: string | undefin
     if (github.status === 404) return reply({ error: "GitHub could not find that public repository." }, 404);
     if (!github.ok) return reply({ error: "GitHub could not check the repository. Try again shortly." }, 502);
     const metadata = await github.json();
+    const description = typeof metadata.description === "string" ? metadata.description.trim().slice(0, 140) : undefined;
     const origin = supportedHomepage(metadata.homepage);
     if (metadata.private) return reply({ error: "Use a public GitHub repository." }, 422);
     if (origin) {
@@ -50,7 +51,7 @@ async function createTemporaryPreview(request: Request, secret: string | undefin
       if (homepage && isHtml(homepage)) {
         stage = "preview signing";
         const repository = `https://github.com/${repo.owner}/${repo.name}`;
-        const { token, expiresAt } = await createPreviewToken({ origin, repository }, Date.now(), secret, userId);
+        const { token, expiresAt } = await createPreviewToken({ origin, repository, description }, Date.now(), secret, userId);
         return reply({ path: `/temporary/${token}`, expiresAt }, 201);
       }
     }
@@ -60,7 +61,7 @@ async function createTemporaryPreview(request: Request, secret: string | undefin
       && await findSourcePreview(repo.owner, repo.name, metadata.default_branch);
     if (!source) return reply({ error: "Source previews currently support React + Vite apps with a src/main entry point and supported dependencies." }, 422);
     stage = "preview signing";
-    const { token, expiresAt } = await createPreviewToken({ source }, Date.now(), secret, userId);
+    const { token, expiresAt } = await createPreviewToken({ source, description }, Date.now(), secret, userId);
     return reply({ path: `/temporary/${token}`, expiresAt }, 201);
   } catch (error) {
     console.error("RepoPlay preview failed", stage, error instanceof Error ? error.name : "Unknown error");

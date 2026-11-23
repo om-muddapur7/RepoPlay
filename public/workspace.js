@@ -4,7 +4,12 @@
   const stored = () => { try { return localStorage.getItem("repoplay-theme"); } catch { return null; } };
   function applyTheme(value) {
     document.documentElement.dataset.theme = value;
-    if (theme) theme.textContent = value === "dark" ? "Light mode" : "Dark mode";
+    if (theme) {
+      const label = value === "dark" ? "Switch to light mode" : "Switch to dark mode";
+      theme.setAttribute("aria-label", label);
+      theme.title = label;
+      theme.querySelector("span").textContent = value === "dark" ? "☀︎" : "☾";
+    }
   }
   applyTheme(stored() ?? (preferred.matches ? "dark" : "light"));
   theme?.addEventListener("click", () => {
@@ -36,11 +41,39 @@
       const parts = new URL(project.repository).pathname.slice(1).split("/");
       if (!parts.join("/").toLowerCase().includes(query)) continue;
       const row = document.createElement("li");
+      const media = document.createElement("div");
+      media.className = "gallery-image";
+      const mark = document.createElement("span");
+      mark.className = "gallery-image-mark";
+      mark.textContent = parts[1].slice(0, 2).toUpperCase();
+      media.append(mark);
+      media.setAttribute("aria-hidden", "true");
+      const image = document.createElement("img");
+      image.alt = "";
+      image.loading = "lazy";
+      image.referrerPolicy = "no-referrer";
+      const petProject = /(?:^|[-_])(?:pet|dog|puppy)(?:[-_]|$)/i.test(parts[1]);
+      image.addEventListener("error", () => {
+        if (petProject && !image.dataset.fallback) {
+          image.dataset.fallback = "true";
+          image.src = "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=800&auto=format&fit=crop";
+        } else {
+          image.remove();
+        }
+      });
+      image.src = "https://opengraph.githubassets.com/1/" + parts.map(encodeURIComponent).join("/");
+      media.append(image);
       const text = document.createElement("div");
+      text.className = "gallery-card-body";
       const title = document.createElement("h3");
       title.textContent = parts[1];
       const subtitle = document.createElement("p");
+      subtitle.className = "gallery-card-meta";
       subtitle.textContent = parts[0] + " · " + new Date(project.renderedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+      const description = document.createElement("p");
+      description.textContent = project.description || "Open a fresh preview of this GitHub project.";
+      const actions = document.createElement("div");
+      actions.className = "gallery-card-actions";
       const open = document.createElement("button");
       open.type = "button";
       open.className = "quiet-button";
@@ -50,8 +83,31 @@
         input.focus();
         form.requestSubmit();
       });
-      text.append(title, subtitle);
-      row.append(text, open);
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "quiet-button delete-project";
+      remove.textContent = "Delete";
+      remove.setAttribute("aria-label", "Delete " + parts[1] + " from your gallery");
+      remove.addEventListener("click", async () => {
+        if (!window.confirm("Remove " + parts[1] + " from your gallery?")) return;
+        remove.disabled = true;
+        try {
+          const write = () => fetch("/api/account", {
+            method: "DELETE", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ repository: project.repository }),
+          });
+          const response = await (navigator.locks ? navigator.locks.request("repoplay-gallery", write) : write());
+          if (!response.ok) throw new Error();
+          await loadAccount();
+        } catch {
+          const notice = document.getElementById("gallery-notice");
+          notice.textContent = "Could not delete the project. Try again.";
+          remove.disabled = false;
+        }
+      });
+      actions.append(open, remove);
+      text.append(title, subtitle, description, actions);
+      row.append(media, text);
       list.append(row);
     }
     empty.hidden = list.childElementCount > 0;

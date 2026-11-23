@@ -1,4 +1,6 @@
 import { TemporaryPreviewForm } from "../components/temporary-preview-form";
+import { ProjectArt } from "../components/project-art";
+import { projects } from "../lib/catalog";
 
 export default function HomePage() {
   return (
@@ -14,7 +16,27 @@ export default function HomePage() {
           <label className="gallery-search" hidden><span className="sr-only">Search your projects</span><input type="search" placeholder="Search projects" /></label>
         </div>
         <p className="gallery-empty" id="gallery-empty" role="status">Checking your account…</p>
+        <p id="gallery-notice" role="status"></p>
         <ul className="history-list" id="history-list" aria-label="Your rendered projects"></ul>
+      </section>
+      <section className="private-gallery" aria-labelledby="sample-title">
+        <div className="gallery-titlebar">
+          <div><h2 id="sample-title">Sample projects</h2><p>Three interactive demos to try.</p></div>
+        </div>
+        <ul className="history-list sample-list">
+          {projects.map(project => (
+            <li key={project.slug}>
+              <ProjectArt theme={project.theme} />
+              <div className="gallery-card-body">
+                <h3>{project.title}</h3>
+                <p>{project.description}</p>
+                <div className="gallery-card-actions">
+                  <a className="quiet-button" href={project.demo} target="_blank" rel="noopener noreferrer">Open demo</a>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
       </section>
     </main>
   );

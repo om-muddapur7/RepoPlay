@@ -26,7 +26,7 @@ async function recordRenderedPreview(request: Request, token: string, env: AuthE
   const projects = galleryEntries(user.user_metadata.repoplay_rendered)
     .filter(item => item.repository.toLowerCase() !== repository.toLowerCase());
   const { error } = await auth.client.auth.updateUser({
-    data: { repoplay_rendered: [{ repository, renderedAt: Date.now() }, ...projects].slice(0, 100) },
+    data: { repoplay_rendered: [{ repository, description: preview.description, renderedAt: Date.now() }, ...projects].slice(0, 100) },
   });
   return auth.apply(new Response(null, { status: error ? 503 : 204 }));
 }
@@ -63,7 +63,7 @@ async function serveTemporaryPreview(request: Request, token: string, secret: st
   const framePolicy = "origin" in preview ? preview.origin : "'self'";
   const frameSandbox = "origin" in preview ? "allow-scripts allow-same-origin" : "allow-scripts";
   const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Temporary preview · RepoPlay</title>
-  <style nonce="${nonce}">:root{color-scheme:dark;--bg:#101311;--panel:#202923;--text:#eff2e9;--accent:#c0e8a8;--border:#36473c}:root[data-theme=light]{color-scheme:light;--bg:#f0f3eb;--panel:#f9fbf5;--text:#17251c;--accent:#285939;--border:#c7d3c5}body{margin:0;min-height:100dvh;display:flex;flex-direction:column;background:var(--bg);color:var(--text);font:16px system-ui}header{padding:12px 20px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;background:var(--panel);border-bottom:1px solid var(--border)}a{color:var(--accent)}button{border:1px solid var(--border);border-radius:8px;padding:7px 10px;background:var(--bg);color:var(--text);font:inherit;cursor:pointer}iframe{display:block;width:100%;flex:1;border:0;background:white}#save-status{font-size:.875rem}</style></head>
+  <style nonce="${nonce}">:root{color-scheme:dark;--bg:#080b13;--panel:#121b2e;--text:#eef3fb;--accent:#9fc0ff;--border:#2a3d61}:root[data-theme=light]{color-scheme:light;--bg:#edf2fb;--panel:#f8faff;--text:#142441;--accent:#284f9a;--border:#c6d2e8}body{margin:0;min-height:100dvh;display:flex;flex-direction:column;background:var(--bg);color:var(--text);font:16px system-ui}header{padding:12px 20px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;background:var(--panel);border-bottom:1px solid var(--border)}a{color:var(--accent)}button{border:1px solid var(--border);border-radius:8px;padding:7px 10px;background:var(--bg);color:var(--text);font:inherit;cursor:pointer}iframe{display:block;width:100%;flex:1;border:0;background:white}#save-status{font-size:.875rem}</style></head>
   <body><header><a href="/#gallery">RepoPlay</a><strong id="status">Temporary preview</strong>${"origin" in preview ? '<button id="confirm" hidden>Preview is visible</button>' : ""}<span role="status" id="save-status"></span></header>
   <iframe title="Repository preview" src="${frameHref}" sandbox="${frameSandbox}" referrerpolicy="no-referrer"></iframe>
   <script nonce="${nonce}">

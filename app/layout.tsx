@@ -16,7 +16,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <nav className="shell nav" aria-label="Main navigation">
             <a className="brand" href="/"><span aria-hidden="true">R</span> RepoPlay</a>
             <div className="nav-actions">
-              <button className="quiet-button" id="theme-toggle" type="button">Light mode</button>
+              <button className="quiet-button theme-toggle" id="theme-toggle" type="button" aria-label="Switch to light mode" title="Switch to light mode">
+                <span aria-hidden="true">☀︎</span>
+              </button>
               <a className="quiet-button" id="account-signin" href="/signin">Sign in</a>
               <details id="account-avatar" className="account-menu" hidden>
                 <summary aria-label="Account menu"><span></span></summary>
