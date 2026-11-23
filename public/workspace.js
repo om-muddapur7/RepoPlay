@@ -28,6 +28,7 @@
   const result = document.getElementById("preview-result");
   const avatar = document.getElementById("account-avatar");
   const signin = document.getElementById("account-signin");
+  const landingSignin = document.getElementById("landing-signin");
   const list = document.getElementById("history-list");
   const empty = document.getElementById("gallery-empty");
   const search = document.querySelector(".gallery-search input");
@@ -129,6 +130,7 @@
       account = data.account;
       projects = data.projects;
       signin.hidden = Boolean(account);
+      if (landingSignin) landingSignin.hidden = Boolean(account);
       avatar.hidden = !account;
       if (account) {
         avatar.setAttribute("aria-label", account.name + " · account menu");
@@ -151,6 +153,7 @@
       account = null;
       list.replaceChildren();
       signin.hidden = false;
+      if (landingSignin) landingSignin.hidden = false;
       avatar.hidden = true;
       search.parentElement.hidden = true;
       empty.hidden = false;

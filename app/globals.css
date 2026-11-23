@@ -259,3 +259,28 @@ body {
 :root[data-theme="light"] .delete-project { color: #982e40; }
 #gallery-notice:empty { display: none; }
 @media (min-width: 850px) { .history-list { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+.landing-hero { padding-bottom: clamp(22px, 5vw, 52px); }
+.landing-hero h1 { font-size: clamp(4rem, 12vw, 8.8rem); }
+.landing-hero > p { max-width: 550px; font-size: clamp(1rem, 2.3vw, 1.2rem); margin: 0; }
+.landing-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+.landing-section { margin-top: 44px; scroll-margin-top: 18px; }
+.landing-section h2 { font-size: 1.65rem; font-weight: 730; letter-spacing: -.035em; margin: 0 0 14px; }
+.landing-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; list-style: none; margin: 0; padding: 0; }
+.landing-card { border: 1px solid var(--border); border-radius: 14px; padding: 20px; background: var(--glass); backdrop-filter: blur(18px); }
+.landing-card h3 { margin: 0 0 7px; font-weight: 700; }
+.landing-card p, .pricing-note, .landing-footer p { margin: 0; color: var(--muted); }
+.landing-card p { line-height: 1.5; }
+.pricing-note { margin: -6px 0 14px; }
+.plan-card .plan-price { display: flex; align-items: baseline; gap: 7px; margin-bottom: 6px; }
+.plan-price strong { color: var(--text); font-size: 2.45rem; line-height: 1.12; font-weight: 780; letter-spacing: -.05em; }
+.landing-section .preview-panel { margin-top: 0; }
+.landing-footer { margin-top: 64px; padding-block: 22px 0; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 14px; border-top: 1px solid var(--border); }
+.landing-footer strong { color: var(--text); }
+.landing-footer nav { display: flex; gap: 16px; }
+.landing-footer a { color: var(--accent); }
+.landing-footer a:hover { text-decoration: underline; }
+@media (max-width: 670px) {
+  .landing-grid { grid-template-columns: 1fr; }
+  .landing-section { margin-top: 34px; }
+}
