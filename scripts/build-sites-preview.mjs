@@ -119,7 +119,7 @@ export default {
       return createTemporaryPreview(request, env.PREVIEW_SIGNING_SECRET);
     }
     if (pathname.startsWith('/temporary/') && request.method === 'GET') {
-      return serveTemporaryPreview(request, pathname.slice('/temporary/'.length), env.PREVIEW_SIGNING_SECRET);
+      return serveTemporaryPreview(pathname.slice('/temporary/'.length), env.PREVIEW_SIGNING_SECRET);
     }
     return new Response('Not found.', { status: 404 });
   },

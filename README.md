@@ -52,7 +52,7 @@ The initial schema defines profiles, categories, projects, and demo launch event
 
 ### Ten-minute repository previews
 
-Paste a public GitHub repository URL into the preview form. RepoPlay reads its GitHub Website field and serves the homepage of an existing public `*.vercel.app` deployment in a sandbox. The browser loads the site's assets from Vercel. Om-Portfolio is configured for this flow. Source-only repositories need a compatible build deployed first.
+Paste a public GitHub repository URL into the preview form. RepoPlay reads its GitHub Website field and embeds the homepage of an existing public `*.vercel.app` deployment in a sandbox. The browser loads the site's assets from Vercel. Om-Portfolio is configured for this flow. Source-only repositories need a compatible build deployed first.
 
 The signed preview link expires ten minutes after issuance. Requests after expiry receive HTTP 410, and the live viewer removes its iframe. RepoPlay stores no deployment files or database row to clean up. The repository and the source deployment remain available independently. The sandbox limits navigation, forms, storage, and third-party requests, so some site features may be unavailable.
 
