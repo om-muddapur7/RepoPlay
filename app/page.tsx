@@ -1,6 +1,6 @@
 const benefits = [
   { title: "Try the actual app", description: "Click through a live demo before you clone the repository." },
-  { title: "Skip the local setup", description: "Try plain HTML, CSS, and JavaScript sites, supported React + Vite projects, or existing Vercel demos." },
+  { title: "Skip the local setup", description: "Open an existing Vercel demo or build a supported project directly from its public GitHub source." },
   { title: "Keep what worked", description: "Successfully rendered projects stay in your private gallery so you can revisit them." },
 ];
 
@@ -25,7 +25,7 @@ export default function HomePage() {
       <section className="landing-section" id="about" aria-labelledby="benefits-title">
         <div className="landing-heading">
           <h2 id="benefits-title">What RepoPlay does</h2>
-          <p>RepoPlay opens an existing demo or builds a supported frontend from its public GitHub source. You can interact with the app as soon as it renders.</p>
+          <p>Preview React + Vite apps, plain HTML/CSS/JavaScript sites, and frontend-only demos of compatible full-stack projects. Frontend demos run without backend services.</p>
         </div>
         <ul className="landing-grid">
           {benefits.map(benefit => (
