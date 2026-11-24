@@ -1,13 +1,15 @@
+import { Billing } from "../../components/billing";
+
 const plans = [
   { title: "Free trial", price: "$0", period: "", features: ["2 website previews", "10 minutes per preview"] },
   { title: "Weekly", price: "$5", period: "/ week", features: ["7 days of access", "Private project gallery", "Reopen saved projects"] },
   { title: "Monthly", price: "$18", period: "/ month", features: ["1 month of access", "Private project gallery", "Reopen saved projects"] },
 ];
 
-export default function Plans(){return <main className="shell studio"><header><h1>Plans &amp; subscriptions</h1><p>Choose how long you want to explore.</p></header>      <section className="landing-section" id="pricing" aria-labelledby="pricing-title">
+export default function Plans(){return <main className="shell studio"><header><h1>Plans &amp; subscriptions</h1><p>Choose how long you want to explore.</p></header>      <section className="landing-section" id="plan-fallback" aria-labelledby="pricing-title">
         <div className="landing-heading">
           <h2 id="pricing-title">Compare plans</h2>
-          <p>Planned pricing. Checkout and plan limits aren’t active yet.</p>
+          <p>Planned pricing while subscriptions are being set up.</p>
         </div>
         <ul className="landing-grid">
           {plans.map((plan, index) => (
@@ -30,4 +32,4 @@ export default function Plans(){return <main className="shell studio"><header><h
           ))}
         </ul>
       </section>
-</main>}
+<Billing /></main>}

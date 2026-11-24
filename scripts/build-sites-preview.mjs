@@ -18,9 +18,10 @@ const home = markup('index');
 const workspace = markup('workspace');
 assert.ok(home.includes('id="home-title"'));
 assert.ok(workspace.includes('id="history-list"'));
+const billingScript = readFileSync(new URL("../public/billing.js", import.meta.url), "utf8");
 const workspaceScript = readFileSync(new URL('../public/workspace.js', import.meta.url), 'utf8');
 function renderDocument(content) {
-  return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>RepoPlay</title><style>' + css + '</style><script defer src="/workspace.js"></script></head><body>' + content + '</body></html>';
+  return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>RepoPlay</title><style>' + css + '</style><script defer src="/workspace.js"></script><script defer src="/billing.js"></script></head><body>' + content + '</body></html>';
 }
 const sources = ['lib/temporary-preview.ts', 'lib/static-preview.ts', 'lib/source-preview-runtime.js', 'lib/repoplay-auth.ts', 'lib/gallery-history.ts', 'app/api/account/route.ts', 'app/api/temporary-previews/route.ts', 'app/temporary/[token]/route.ts'];
 const shared = sources.map((path, index) => {
@@ -34,8 +35,9 @@ const shared = sources.map((path, index) => {
 const worker = `
 ${shared}
 const homeHtml = ${JSON.stringify(renderDocument(home))};
-const extraPages = ${JSON.stringify(Object.fromEntries(["about","plans","profile"].map(page => ["/"+page,renderDocument(markup(page))])))};
+const extraPages = ${JSON.stringify(Object.fromEntries(["about","plans","profile","contact"].map(page => ["/"+page,renderDocument(markup(page))])))};
 const workspaceHtml = ${JSON.stringify(renderDocument(workspace))};
+const billingJs = ${JSON.stringify(billingScript)};
 const workspaceJs = ${JSON.stringify(workspaceScript)};
 export default {
   async fetch(request, env) {
@@ -44,6 +46,8 @@ export default {
     if ((pathname === '/' || pathname === '/workspace') && request.method === 'GET') {
       return new Response(pathname === '/' ? homeHtml : workspaceHtml, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
     }
+    if (pathname === '/api/billing-config' && request.method === 'GET') return Response.json({ publishableKey: env.CLERK_PUBLISHABLE_KEY || null }, { headers: { 'Cache-Control': 'no-store' } });
+    if (pathname === '/billing.js' && request.method === 'GET') return new Response(billingJs, { headers: { 'Content-Type': 'text/javascript; charset=utf-8' } });
     if (pathname === '/workspace.js' && request.method === 'GET') {
       return new Response(workspaceJs, { headers: { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' } });
     }

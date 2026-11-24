@@ -347,3 +347,27 @@ body {
 .plan-strip {margin:54px 0 12px;align-items:center;grid-template-columns:1fr auto}
 .footer-brand {font:2.4rem Georgia,serif;letter-spacing:-.06em}.landing-footer {border-top:1px solid var(--border);padding-top:40px}
 @media(max-width:670px){.story-list section,.plan-strip{grid-template-columns:1fr;gap:10px}.plan-strip a{justify-self:start}}
+
+/* AI Nest-inspired public pages. */
+.nest-home .landing-hero {display:grid;align-content:center;min-height:clamp(410px,75vh,740px);padding:64px 20px;border:0;border-radius:0;background:linear-gradient(135deg,#e0f2fe,#eff6ff 48%,#c7d2fe);color:#0f172a}
+.nest-home .landing-hero::before,.nest-home .landing-hero::after {display:none}
+.nest-home .landing-hero h1,.nest-contact h1 {font-family:"Google Sans",system-ui,sans-serif;font-weight:650;letter-spacing:-.055em}
+.nest-home .landing-hero h1 {font-size:clamp(3rem,8vw,6.3rem)}
+.nest-home .landing-hero h1 span {color:#2563eb}
+.nest-home .landing-hero p {color:#475569;margin-block:20px}
+.nest-home .landing-hero .button {background:#2563eb;color:white;border-color:#2563eb}
+.nest-home .landing-hero .quiet-button {background:white;color:#172554;border-color:#cbd5e1}
+.nest-home .landing-section {padding-block:64px 34px;text-align:center}
+.nest-home .landing-heading p {margin-inline:auto}
+.nest-billing {max-width:960px;margin:56px auto;text-align:center}
+.nest-billing h2 {font-size:clamp(1.9rem,5vw,2.65rem);margin-bottom:10px}
+.nest-billing [role="status"] {color:var(--muted);margin-bottom:18px}
+.nest-billing [role="status"]:empty {display:none}
+#clerk-billing-profile {display:flex;justify-content:center}
+#plan-fallback[hidden],#billing-signin[hidden] {display:none}
+.nest-home .story-link {display:table;margin:0 auto 60px}
+.nest-footer {grid-template-columns:1.5fr 1fr 1fr;justify-content:stretch;justify-items:start;align-items:start;column-gap:30px}
+.nest-footer .section-links {align-items:start;flex-direction:column}
+.nest-footer p {color:var(--muted);margin:10px 0}
+.nest-contact .landing-card a {color:var(--accent)}
+@media(max-width:670px){.nest-footer {grid-template-columns:1fr;row-gap:18px}.nest-footer .section-links{flex-direction:row}}

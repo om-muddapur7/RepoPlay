@@ -1,3 +1,5 @@
+import { Billing } from "../components/billing";
+
 const benefits = [
   { title: "Try the actual app", description: "Click through a live demo before you clone the repository." },
   { title: "Skip the local setup", description: "Open an existing Vercel demo or build a supported project directly from its public GitHub source." },
@@ -6,9 +8,9 @@ const benefits = [
 
 export default function HomePage() {
   return (
-    <main className="shell workspace landing">
+    <main className="nest-home">
       <section className="workspace-intro landing-hero" aria-labelledby="home-title">
-        <h1 id="home-title">RepoPlay</h1>
+        <h1 id="home-title">Welcome to<br /><span>RepoPlay</span></h1>
         <p>Turn a public GitHub repository into a quick, interactive demo.</p>
         <div className="landing-actions">
           <a className="button" href="/workspace">Open workspace</a>
@@ -16,7 +18,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="landing-section" id="about" aria-labelledby="benefits-title">
+      <section className="shell landing-section" id="about" aria-labelledby="benefits-title">
         <div className="landing-heading">
           <h2 id="benefits-title">From source to screen</h2>
           <p>Preview React + Vite apps, plain HTML/CSS/JavaScript sites, and frontend-only demos of compatible full-stack projects. Frontend demos run without backend services.</p>
@@ -31,7 +33,7 @@ export default function HomePage() {
         </ul><a className="story-link" href="/about">How RepoPlay works →</a>
       </section>
 
-      <section className="plan-strip"><h2>Start with the free trial.</h2><a className="quiet-button" href="/plans">Explore plans →</a></section>
+      <div className="shell"><Billing /><a className="story-link" href="/plans">Compare plans →</a></div>
     </main>
   );
 }
