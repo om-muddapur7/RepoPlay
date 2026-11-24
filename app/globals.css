@@ -371,3 +371,31 @@ body {
 .nest-footer p {color:var(--muted);margin:10px 0}
 .nest-contact .landing-card a {color:var(--accent)}
 @media(max-width:670px){.nest-footer {grid-template-columns:1fr;row-gap:18px}.nest-footer .section-links{flex-direction:row}}
+
+/* AI Nest visual language across shared pages and the workspace. */
+:root {--background:#020617;--surface:#0f172a;--glass:#17233be8;--border:#27354d;--text:#f8fafc;--muted:#a9b8ce;--accent:#93b8ff;--glow:#122344;--primary:#2563eb}
+:root[data-theme="light"] {--background:#f8fafc;--surface:#fff;--glass:#ffffffed;--border:#dce3ed;--text:#0f172a;--muted:#475569;--accent:#1d4ed8;--glow:#e9f3ff}
+@media(prefers-color-scheme:light){:root:not([data-theme]){--background:#f8fafc;--surface:#fff;--glass:#ffffffed;--border:#dce3ed;--text:#0f172a;--muted:#475569;--accent:#1d4ed8;--glow:#e9f3ff}}
+body {font-family:"Google Sans",system-ui,sans-serif}
+.topbar {position:sticky;top:0;z-index:5}
+.topbar .shell,.nest-footer {width:min(1240px,100% - 44px)}
+.brand span,.button {background:var(--primary);color:#fff}
+.button:hover {background:#1d4ed8;color:#fff}
+#account-signin {background:var(--primary);color:#fff;border-color:transparent;border-radius:999px;padding-inline:20px}
+.studio h1,.footer-brand {font-family:inherit;font-weight:650;letter-spacing:-.045em}
+.studio h1 {font-size:clamp(2.45rem,6vw,4.3rem)}
+.landing-card,.preview-panel,.history-list>li {background:var(--surface);border-radius:12px;box-shadow:0 5px 22px #0f172a0a}
+.workspace-layout {min-height:72vh;display:grid;grid-template-columns:230px minmax(0,1fr);background:color-mix(in srgb,var(--background),var(--glow) 32%)}
+.workspace-sidebar {padding:26px 18px;background:var(--surface);border-right:1px solid var(--border)}
+.workspace-identity {display:flex;align-items:center;gap:12px;padding:0 8px 23px}
+.workspace-identity span {display:grid;place-items:center;width:39px;height:39px;border-radius:10px;background:var(--primary);color:#fff;font-weight:750;flex:none}
+.workspace-identity p {margin:3px 0 0;font-size:.8rem;color:var(--muted);overflow-wrap:anywhere}
+.workspace-sidebar nav {display:grid;gap:5px}
+.workspace-sidebar nav a {display:block;padding:10px 12px;border-radius:9px;color:var(--muted);font-size:.875rem;font-weight:600}
+.workspace-sidebar nav a:hover,.workspace-sidebar nav a:focus-visible {background:color-mix(in srgb,var(--primary),var(--surface) 88%);color:var(--accent);text-decoration:none}
+.workspace-main {width:min(100%,1110px);padding:clamp(24px,4vw,50px);margin:0 auto}
+.workspace-main .workspace-intro h1 {font-family:inherit;font-size:clamp(2rem,5vw,3.1rem);font-weight:650;letter-spacing:-.045em}
+.workspace-main section {scroll-margin-top:110px}
+.preview-panel .frontend-option {display:flex;align-items:center;gap:8px;margin:14px 0 0;color:var(--muted);font-size:.875rem}
+.frontend-option input {accent-color:var(--primary)}
+@media(max-width:760px){.workspace-layout{grid-template-columns:1fr}.workspace-sidebar{padding:12px 18px;border-right:0;border-bottom:1px solid var(--border)}.workspace-identity{display:none}.workspace-sidebar nav{display:flex;flex-wrap:wrap}.workspace-sidebar nav a{padding:8px 10px}}

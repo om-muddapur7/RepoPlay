@@ -134,6 +134,8 @@
       if (!response.ok) throw new Error();
       const data = await response.json();
       account = data.account;
+      const workspaceName = document.getElementById("workspace-display-name");
+      if (workspaceName) workspaceName.textContent = account?.name || "RepoPlay";
       if (document.getElementById("profile-status")) {
         document.getElementById("profile-status").textContent = account ? account.name : "Sign in to view your plan and projects.";
         document.getElementById("profile-details").hidden = !(account);
