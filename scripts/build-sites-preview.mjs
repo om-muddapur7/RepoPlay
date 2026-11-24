@@ -34,11 +34,13 @@ const shared = sources.map((path, index) => {
 const worker = `
 ${shared}
 const homeHtml = ${JSON.stringify(renderDocument(home))};
+const extraPages = ${JSON.stringify(Object.fromEntries(["about","plans","profile"].map(page => ["/"+page,renderDocument(markup(page))])))};
 const workspaceHtml = ${JSON.stringify(renderDocument(workspace))};
 const workspaceJs = ${JSON.stringify(workspaceScript)};
 export default {
   async fetch(request, env) {
     const { pathname } = new URL(request.url);
+    if (request.method === 'GET' && Object.hasOwn(extraPages, pathname)) return new Response(extraPages[pathname], { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
     if ((pathname === '/' || pathname === '/workspace') && request.method === 'GET') {
       return new Response(pathname === '/' ? homeHtml : workspaceHtml, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
     }

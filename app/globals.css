@@ -328,3 +328,22 @@ body {
   .nav { flex-wrap: wrap; padding-block: 10px; gap: 7px; }
   .nav > .section-links { order: 3; width: 100%; justify-content: center; min-height: 32px; }
 }
+
+/* Shared editorial layout and translucent surfaces. */
+.studio {padding-block:clamp(52px,8vw,100px);min-height:65vh}
+.studio header {max-width:720px;margin-bottom:44px}
+.studio h1,.landing-hero h1 {font-family:Georgia,serif;font-weight:500;letter-spacing:-.065em;line-height:1.04}
+.studio h1 {font-size:clamp(3rem,7vw,5.6rem)}
+.studio header p,.story-list p {color:var(--muted);line-height:1.65}
+.landing-hero {position:relative;isolation:isolate;padding:clamp(48px,8vw,100px) 16px;border:1px solid var(--border);border-radius:30px;overflow:hidden;background:linear-gradient(125deg, #5678bd22,transparent 55%,#4ca9a51f)}
+.landing-hero:before,.landing-hero:after {content:"";position:absolute;z-index:-1;pointer-events:none;width:60%;height:210%;border:1px solid #829fce47;border-radius:50%;transform:rotate(40deg);left:-42%;top:-90%;box-shadow:0 0 0 16px #829fce0a,0 0 0 48px #829fce09,0 0 0 84px #829fce08}
+.landing-hero:after {left:auto;right:-40%;top:0;transform:rotate(35deg)}
+.landing.workspace {padding-top:clamp(30px,5vw,65px)}
+.landing-hero h1 {font-size:clamp(4rem,11vw,9rem)}
+.landing-card,.preview-panel,.history-list>li {background:linear-gradient(135deg,var(--glass),var(--surface));backdrop-filter:blur(18px);border-radius:20px}
+.story-list section,.plan-strip {display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:25px;padding:28px 0;border-top:1px solid var(--border)}
+.story-list {margin-bottom:24px}.story-list h2,.story-list p {margin:0}
+.story-link {display:inline-block;color:var(--accent);margin-top:20px}
+.plan-strip {margin:54px 0 12px;align-items:center;grid-template-columns:1fr auto}
+.footer-brand {font:2.4rem Georgia,serif;letter-spacing:-.06em}.landing-footer {border-top:1px solid var(--border);padding-top:40px}
+@media(max-width:670px){.story-list section,.plan-strip{grid-template-columns:1fr;gap:10px}.plan-strip a{justify-self:start}}

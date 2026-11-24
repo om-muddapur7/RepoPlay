@@ -134,6 +134,11 @@
       if (!response.ok) throw new Error();
       const data = await response.json();
       account = data.account;
+      if (document.getElementById("profile-status")) {
+        document.getElementById("profile-status").textContent = account ? account.name : "Sign in to view your plan and projects.";
+        document.getElementById("profile-details").hidden = !(account);
+        document.getElementById("profile-login").hidden = Boolean(account);
+      }
       projects = data.projects;
       signin.hidden = Boolean(account);
       if (landingSignin) landingSignin.hidden = Boolean(account);
@@ -157,6 +162,11 @@
     } catch {
       projects = [];
       account = null;
+      if (document.getElementById("profile-status")) {
+        document.getElementById("profile-status").textContent = "Your account could not be loaded. Try signing in again.";
+        document.getElementById("profile-details").hidden = !(false);
+        document.getElementById("profile-login").hidden = Boolean(false);
+      }
       if (list) list.replaceChildren();
       signin.hidden = false;
       if (landingSignin) landingSignin.hidden = false;
