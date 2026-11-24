@@ -30,7 +30,7 @@ type Source = { owner: string; name: string; commit: string; entry: string; dire
 type PreviewTarget = ({ origin: string; repository?: string } | { source: Source }) & { description?: string };
 type Preview = PreviewTarget & { expiresAt: number };
 
-const sourceEntry = /^src\/main\.(tsx|jsx|ts|js)$/;
+const sourceEntry = /^src\/(?:main|index)\.(tsx|jsx|ts|js)$/;
 
 function supportedSource(source: unknown): Source | null {
   if (!source || typeof source !== "object") return null;
@@ -152,14 +152,15 @@ export async function findSourcePreview(owner: string, name: string, frontendOnl
     if (packageText.length > 16000) return null;
     const pkg = JSON.parse(packageText);
     const vite = pkg?.devDependencies?.vite || pkg?.dependencies?.vite;
-    if (!vite && !pkg?.scripts?.build && !pkg?.dependencies?.react && !pkg?.devDependencies?.react) {
+    const reactScripts = pkg?.dependencies?.["react-scripts"] || pkg?.devDependencies?.["react-scripts"];
+    if (!vite && !reactScripts && !pkg?.scripts?.build && !pkg?.dependencies?.react && !pkg?.devDependencies?.react) {
       const index = await fetch(folder + "index.html", {
         method: "HEAD", redirect: "manual", signal: AbortSignal.timeout(6000),
       });
       return index.ok ? supportedSource({ ...source, entry: "index.html" }) : null;
     }
-    if (!vite || !pkg?.dependencies?.react) return null;
-    const entries = ["tsx", "jsx", "ts", "js"].map(extension => `src/main.${extension}`);
+    if ((!vite && !reactScripts) || !pkg?.dependencies?.react) return null;
+    const entries = ["tsx", "jsx", "ts", "js"].map(extension => `src/${vite ? "main" : "index"}.${extension}`);
     const statuses = await Promise.all(entries.map(entry => fetch(folder + entry, {
       method: "HEAD", redirect: "manual", signal: AbortSignal.timeout(6000),
     })));

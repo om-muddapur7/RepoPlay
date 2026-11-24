@@ -59,8 +59,8 @@ async function createTemporaryPreview(request: Request, secret: string | undefin
 
     stage = "GitHub";
     const source = await findSourcePreview(repo.owner, repo.name, frontendOnly);
-    if (!source && frontendOnly) return reply({ error: "No compatible static or React + Vite frontend was found." }, 422);
-    if (!source) return reply({ error: "Source previews support static sites with a root index.html and compatible React + Vite apps." }, 422);
+    if (!source && frontendOnly) return reply({ error: "No compatible static, Vite React, or Create React App frontend was found." }, 422);
+    if (!source) return reply({ error: "Source previews support static sites with a root index.html and compatible Vite React and Create React App projects." }, 422);
     stage = "preview signing";
     const { token, expiresAt } = await createPreviewToken({ source, description }, Date.now(), secret, userId);
     return reply({ path: `/temporary/${token}`, expiresAt }, 201);
