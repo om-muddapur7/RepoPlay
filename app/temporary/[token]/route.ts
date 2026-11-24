@@ -59,7 +59,7 @@ async function serveTemporaryPreview(request: Request, token: string, secret: st
       headers: {
         ...previewHeaders,
         "Content-Type": "text/html; charset=utf-8",
-        "Content-Security-Policy": `sandbox allow-scripts; default-src 'none'; base-uri 'none'; frame-ancestors 'self'; script-src 'nonce-${nonce}' 'wasm-unsafe-eval' data: https://esm.sh; connect-src https://raw.githubusercontent.com https://cdn.jsdelivr.net; worker-src blob:; style-src data: 'unsafe-inline'; img-src data: blob:; font-src data:; form-action 'none'`,
+        "Content-Security-Policy": `sandbox allow-scripts; default-src 'none'; base-uri 'none'; frame-ancestors 'self'; script-src 'nonce-${nonce}' 'wasm-unsafe-eval' data: https://esm.sh; connect-src https://raw.githubusercontent.com https://cdn.jsdelivr.net; worker-src blob:; style-src data: 'unsafe-inline'; img-src data: blob:; media-src data: blob:; font-src data:; form-action 'none'`,
       },
     });
   }
