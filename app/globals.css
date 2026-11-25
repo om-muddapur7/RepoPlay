@@ -775,3 +775,5 @@ body:has(.nest-home) .topbar { background: color-mix(in srgb, var(--bg), transpa
   .footer-grid > :first-child { grid-column: 1 / -1; }
 }
 @media (max-width: 480px) { .reference-features, .footer-grid { grid-template-columns: minmax(0, 1fr); } }
+
+.nest-home :is(#home, #about, #plans) { scroll-margin-top: 72px; }
