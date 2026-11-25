@@ -14,7 +14,7 @@ export default async function Profile() {
     <main className="shell page">
       <header className="page-head">
         <span className="eyebrow">Account</span>
-        <h1>Your profile &amp; plan</h1>
+        <h1>Your profile &amp; <span className="accent">plan</span></h1>
         <p>Manage your details, security and subscription in one place.</p>
       </header>
       <section className="glass panel" aria-label="Current plan">

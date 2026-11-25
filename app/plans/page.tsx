@@ -25,7 +25,7 @@ export default function Plans() {
     <main className="shell page">
       <header className="page-head center">
         <span className="eyebrow">Pricing</span>
-        <h1>Simple plans, <span className="gradient-text">no surprises</span></h1>
+        <h1>Plans &amp; <span className="accent">subscriptions</span></h1>
         <p>Start free. Upgrade when you want unlimited previews and a private gallery.</p>
       </header>
       <PlanCards />
@@ -34,7 +34,7 @@ export default function Plans() {
         <div className="section-head"><h2>Compare plans</h2></div>
         <div className="glass table-wrap">
           <table className="compare">
-            <thead><tr><th scope="col">Feature</th><th scope="col">Free</th><th scope="col">Weekly</th><th scope="col">Monthly</th></tr></thead>
+            <thead><tr><th scope="col">Feature</th><th scope="col">Free</th><th scope="col">Basic</th><th scope="col">Premium</th></tr></thead>
             <tbody>{rows.map(([feature, ...cells]) => <tr key={feature}><td>{feature}</td>{cells.map((cell, i) => <td key={i}>{cell}</td>)}</tr>)}</tbody>
           </table>
         </div>

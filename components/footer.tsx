@@ -8,7 +8,7 @@ export function Footer() {
         <div className="footer-grid">
           <div>
             <Link className="brand" href="/"><span className="brand-mark" aria-hidden="true">R</span>RepoPlay</Link>
-            <p>Turn any public GitHub repository into a live, interactive demo in seconds.</p>
+            <p>Preview static sites and compatible React frontends from public GitHub repositories.</p>
           </div>
           <div>
             <h4>Product</h4>
@@ -16,11 +16,11 @@ export function Footer() {
           </div>
           <div>
             <h4>Company</h4>
-            <div className="footer-links"><Link href="/contact">Contact</Link><Link href="/profile">Account</Link></div>
+            <div className="footer-links"><Link href="/">Home</Link><Link href="/contact">Contact</Link><Link href="/profile">Account</Link></div>
           </div>
         </div>
         <div className="footer-bottom">
-          <span>© {new Date().getFullYear()} RepoPlay · Built by Om Muddapur</span>
+          <span>© {new Date().getFullYear()} RepoPlay · Om Muddapur</span>
           <div className="social" aria-label="Social links">
             <a href="https://github.com/om-muddapur7" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><Github /></a>
             <a href="https://om-portfolio-plum.vercel.app/" target="_blank" rel="noopener noreferrer" aria-label="Portfolio"><Globe /></a>
