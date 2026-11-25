@@ -1,8 +1,8 @@
-/** Shared Clerk theme so hosted components match the glass design. */
+/** Shared Clerk appearance for pricing and account controls. */
 export const clerkAppearance = {
   variables: {
-    colorPrimary: "#2563eb",
-    colorBackground: "transparent",
+    colorPrimary: "var(--primary)",
+    colorBackground: "var(--card)",
     colorText: "var(--text)",
     colorTextSecondary: "var(--muted)",
     colorNeutral: "var(--text)",
@@ -16,8 +16,8 @@ export const clerkAppearance = {
     cardBox: {
       background: "var(--glass)",
       border: "1px solid var(--border)",
-      boxShadow: "var(--shadow)",
-      backdropFilter: "blur(22px) saturate(160%)",
+      boxShadow: "var(--reference-shadow)",
+      backdropFilter: "none",
       borderRadius: "12px",
       maxWidth: "100%",
     },
@@ -25,6 +25,7 @@ export const clerkAppearance = {
     footer: { background: "transparent" },
     formButtonPrimary: { background: "var(--primary)", boxShadow: "none", fontWeight: 650 },
     socialButtonsBlockButton: { background: "var(--glass)", border: "1px solid var(--border)" },
-    pricingTableCard: { background: "var(--glass)", border: "1px solid var(--border)", boxShadow: "none" },
+    pricingTableCard: { background: "var(--card)", border: "1px solid var(--border)", boxShadow: "var(--reference-shadow)", borderRadius: "14px" },
+    userButtonPopoverCard: { background: "var(--card)", boxShadow: "var(--reference-shadow)" },
   },
 };

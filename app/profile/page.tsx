@@ -11,10 +11,9 @@ export default async function Profile() {
   const current = await session();
   const used = current ? (await readPrivate(current.userId)).created : 0;
   return (
-    <main className="shell page">
-      <header className="page-head">
-        <span className="eyebrow">Account</span>
-        <h1>Your profile &amp; <span className="accent">plan</span></h1>
+    <main className="shell reference-page reference-account">
+      <header className="reference-heading">
+        <h1>Manage your account</h1>
         <p>Manage your details, security and subscription in one place.</p>
       </header>
       <section className="glass panel" aria-label="Current plan">
@@ -25,7 +24,7 @@ export default async function Profile() {
           <Link className="ghost-button" href="/workspace">Open workspace</Link>
         </div>
       </section>
-      <div className="panel" style={{ padding: 0 }}><UserProfile routing="hash" /></div>
+      <div className="reference-user-profile"><UserProfile routing="hash" /></div>
     </main>
   );
 }

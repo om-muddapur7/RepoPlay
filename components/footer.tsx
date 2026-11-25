@@ -11,12 +11,13 @@ export function Footer() {
             <p>Preview static sites and compatible React frontends from public GitHub repositories.</p>
           </div>
           <div>
-            <h4>Product</h4>
-            <div className="footer-links"><Link href="/workspace">Workspace</Link><Link href="/plans">Pricing</Link><Link href="/about">How it works</Link></div>
+            <h4>Company</h4>
+            <div className="footer-links"><Link href="/">Home</Link><Link href="/about">About us</Link><Link href="/contact">Contact us</Link><Link href="/plans">Pricing</Link></div>
           </div>
           <div>
-            <h4>Company</h4>
-            <div className="footer-links"><Link href="/">Home</Link><Link href="/contact">Contact</Link><Link href="/profile">Account</Link></div>
+            <h4>Explore RepoPlay</h4>
+            <p>Create a preview or reopen a project from your workspace.</p>
+            <Link className="button" href="/workspace">Open workspace</Link>
           </div>
         </div>
         <div className="footer-bottom">
