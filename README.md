@@ -13,9 +13,7 @@ RepoPlay lets developers publish public GitHub projects alongside working, hoste
 
 Use one Next.js App Router application with TypeScript. Tailwind supplies the styling foundation. Add individual shadcn/ui controls and Motion when an interaction needs them. Server components render public pages and route handlers handle OAuth callbacks, GitHub imports, and analytics.
 
-Use Supabase Auth with the GitHub provider and PKCE. This replaces Auth.js and lets Postgres enforce ownership through row-level security using the same session identity. Create a public profile from verified GitHub identity data on first login. Use GitHub's stable numeric user and repository IDs as identifiers and snapshot metadata on import. Use the public repository API, cache metadata briefly, and handle rate limits without storing the GitHub OAuth token in project data.
-
-Use Cloudflare Workers Free on a workers.dev subdomain and Supabase Free. Check Next.js compatibility with the Cloudflare adapter before deployment and verify OAuth, database requests, and CPU usage in the Workers preview. Cloudflare lists 100,000 Worker requests per day and 10 ms CPU per invocation on Free. Supabase lists 500 MB of database space and pauses free projects after a week of inactivity.
+RepoPlay uses Clerk for authentication, private gallery metadata, and billing. The redesigned app needs a Next.js runtime for Clerk session middleware and server routes. The previous Sites Worker packaging script targets the earlier Supabase release.
 
 Accept HTTPS demo links without credentials. Do not proxy submitted sites or execute repositories. The viewer should load a cross-origin iframe only after a user requests it, grant scripts with a minimal sandbox, and avoid enabling top navigation, popups, or same-origin access by default. Always show a direct external link because some hosts block framing or require capabilities the sandbox restricts. Keep analytics writes server-side with rate limits and retry-safe event IDs.
 
@@ -56,16 +54,7 @@ Paste a public GitHub repository URL into the preview form. RepoPlay embeds a wo
 
 Select **Frontend demo** to build directly from source and check the usual frontend folders (`frontend`, `client`, and `web`) as well as the repository root. AI Expense Tracker uses its nested React frontend with sample transactions and simulated insights. Edits in that demo are kept only in memory during the preview.
 
-Preview creation and viewing require a Google session. RepoPlay encrypts each preview link with authenticated encryption tied to the verified Supabase user ID. Signed-out visitors and other accounts receive HTTP 404. The owner gets HTTP 410 after ten minutes, and the live viewer removes its iframe. RepoPlay stores no deployment files or database row to clean up. GitHub source files remain available independently.
-
-### Google sign-in
-
-The workspace displays the signed-in Google account's profile photo or initials. The private gallery keeps up to 100 distinct recently rendered repositories in that user's Supabase Auth metadata. Source previews are added after rendering content. Embedded Vercel previews are added after the user confirms the site is visible.
-
-1. In Google Cloud, configure the consent screen and create a web OAuth client. Register the callback URL shown in the Supabase Google provider settings as the Google client's authorized redirect URI.
-2. In Supabase Auth, enable Google and enter that client ID and secret. Add the exact RepoPlay URL plus `/auth/callback` to the Supabase Redirect URLs allowlist. For local development, use `http://localhost:3000/auth/callback`.
-3. Copy `.env.example` to `.env.local` and fill in `REPOPLAY_ORIGIN`, `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY`. For Sites, configure the same variables in its environment settings with the deployed site origin. Keep the Google client secret in Supabase.
-4. Open `/signin` and select **Continue with Google**. The OAuth callback exchanges the PKCE code for a session in HTTP-only cookies. The sample gallery is still available without a RepoPlay session where hosting access permits it.
+Preview creation and viewing require a Clerk session. Preview links are tied to the signed-in Clerk user and expire after ten minutes. Source previews are saved after rendering, and embedded demos are saved after the user confirms visibility.
 
 To enable the feature, set `PREVIEW_SIGNING_SECRET` to a randomly generated server-side secret of at least 32 bytes. In PowerShell, run the following from the project directory before starting Next.js.
 
@@ -82,4 +71,13 @@ npm.cmd install
 npm.cmd run dev
 ```
 
-Open http://localhost:3000. The first milestone runs without GitHub or Supabase credentials. Use `npm.cmd run check` for TypeScript and production build checks.
+Open http://localhost:3000. Configure the Clerk keys below before starting. Use `npm.cmd run check` for TypeScript and production build checks.
+
+## Setup (Clerk auth + billing)
+
+1. Create an application at https://dashboard.clerk.com and enable the sign-in methods you want (Google, GitHub, email).
+2. Copy `.env.example` to `.env.local` and fill in `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `PREVIEW_SIGNING_SECRET` (32+ chars).
+3. In Clerk, open **Billing**, enable it, connect Stripe, and create **user** plans with the slugs `basic` ($5/month) and `premium` ($12/month). Change `PAID_PLAN_SLUGS` if you use different slugs.
+4. `npm install && npm run dev`.
+
+Free users get 2 previews (enforced server-side); users on a paid plan are unlimited. Gallery data and usage counters live in each user's Clerk private metadata. Existing Supabase galleries need an account migration before switching a live installation.

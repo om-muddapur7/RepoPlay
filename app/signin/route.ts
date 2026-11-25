@@ -1,5 +1,3 @@
-import { signInPage } from "../../lib/repoplay-auth";
-
 export function GET(request: Request) {
-  return signInPage(request, process.env);
+  return Response.redirect(new URL("/sign-in", request.url), 307);
 }

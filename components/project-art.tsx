@@ -8,17 +8,13 @@ export function ProjectArt({ theme }: { theme: Project["theme"] }) {
         {theme === "blue" && (
           <div className="code-sample">
             <div><b>const</b> project = {"{"}</div>
-            <div>　 name: <em>"RepoPlay"</em>,</div>
-            <div>　 interactive: <b>true</b></div>
+            <div>&nbsp;&nbsp;name: <em>&quot;RepoPlay&quot;</em>,</div>
+            <div>&nbsp;&nbsp;interactive: <b>true</b></div>
             <div>{"}"};</div>
           </div>
         )}
-        {theme === "purple" && (
-          <div className="diagram"><span>Idea</span><i /><span>Sketch</span><i /><span>Share</span></div>
-        )}
-        {theme === "green" && (
-          <div className="chart"><i /><i /><i /><i /><i /><i /><i /></div>
-        )}
+        {theme === "purple" && <div className="diagram"><span>Idea</span><i /><span>Sketch</span><i /><span>Share</span></div>}
+        {theme === "green" && <div className="chart"><i /><i /><i /><i /><i /><i /><i /></div>}
       </div>
     </div>
   );

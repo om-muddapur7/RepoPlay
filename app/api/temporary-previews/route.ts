@@ -1,19 +1,22 @@
 import { createPreviewToken, fetchHomepage, findSourcePreview, isHtml, previewHeaders, repositoryFromUrl, supportedHomepage } from "../../../lib/temporary-preview";
-import { authContext, type AuthEnv } from "../../../lib/repoplay-auth";
+import { FREE_PREVIEW_LIMIT, readPrivate, session, writePrivate } from "../../../lib/account";
 
 export async function POST(request: Request) {
-  return authenticatedCreation(request, process.env);
-}
-
-async function authenticatedCreation(request: Request, env: AuthEnv & { PREVIEW_SIGNING_SECRET?: string }) {
-  const auth = authContext(request, env);
-  if (!auth.client) return Response.json({ error: "Google sign-in is awaiting configuration." }, { status: 503, headers: previewHeaders });
-  if (request.headers.get("origin") !== auth.origin) return new Response("Forbidden.", { status: 403, headers: previewHeaders });
-  const userId = await auth.userId();
-  const response = userId
-    ? await createTemporaryPreview(request, env.PREVIEW_SIGNING_SECRET, userId)
-    : Response.json({ error: "Sign in with Google to create a preview." }, { status: 401, headers: previewHeaders });
-  return auth.apply(response);
+  const secret = process.env.PREVIEW_SIGNING_SECRET;
+  const origin = new URL(request.url).origin;
+  if (request.headers.get("origin") !== origin) return new Response("Forbidden.", { status: 403, headers: previewHeaders });
+  const current = await session();
+  if (!current) return Response.json({ error: "Sign in to create a preview." }, { status: 401, headers: previewHeaders });
+  let created = 0;
+  if (!current.paid) {
+    created = (await readPrivate(current.userId)).created;
+    if (created >= FREE_PREVIEW_LIMIT) {
+      return Response.json({ error: `You have used your ${FREE_PREVIEW_LIMIT} free previews. Upgrade to keep creating.`, upgrade: true }, { status: 402, headers: previewHeaders });
+    }
+  }
+  const response = await createTemporaryPreview(request, secret, current.userId);
+  if (response.status === 201 && !current.paid) await writePrivate(current.userId, { repoplay_created: created + 1 });
+  return response;
 }
 
 async function createTemporaryPreview(request: Request, secret: string | undefined, userId: string) {

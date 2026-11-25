@@ -1,7 +1,6 @@
 import { createPreviewToken, isExpenseTrackerDemo, PREVIEW_DURATION_MS, previewHeaders, readPreviewToken } from "../../../lib/temporary-preview";
 import { sourcePreviewRuntime } from "../../../lib/source-preview-runtime";
-import { authContext, type AuthEnv } from "../../../lib/repoplay-auth";
-import { galleryEntries } from "../../../lib/gallery-history";
+import { readPrivate, session, writePrivate } from "../../../lib/account";
 import { STATIC_CONTENT_AUDIENCE } from "../../../lib/static-preview";
 
 export async function GET(request: Request, { params }: { params: Promise<{ token: string }> }) {
@@ -13,31 +12,29 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
   return recordRenderedPreview(request, (await params).token, process.env);
 }
 
-async function recordRenderedPreview(request: Request, token: string, env: AuthEnv) {
-  const auth = authContext(request, env);
-  const missing = () => auth.apply(new Response("Preview not found.", { status: 404 }));
-  if (!auth.client || request.headers.get("origin") !== auth.origin || !env.PREVIEW_SIGNING_SECRET) return missing();
-  const user = await auth.user();
-  if (!user) return missing();
-  const preview = await readPreviewToken(token, env.PREVIEW_SIGNING_SECRET, user.id);
+async function recordRenderedPreview(request: Request, token: string, env: Record<string, string | undefined>) {
+  const missing = () => new Response("Preview not found.", { status: 404 });
+  if (request.headers.get("origin") !== new URL(request.url).origin || !env.PREVIEW_SIGNING_SECRET) return missing();
+  const current = await session();
+  if (!current) return missing();
+  const preview = await readPreviewToken(token, env.PREVIEW_SIGNING_SECRET, current.userId);
   if (!preview || preview.expiresAt <= Date.now()) return missing();
   const repository = "source" in preview
     ? `https://github.com/${preview.source.owner}/${preview.source.name}` : preview.repository;
   if (!repository) return missing();
-  const projects = galleryEntries(user.user_metadata.repoplay_rendered)
-    .filter(item => item.repository.toLowerCase() !== repository.toLowerCase());
-  const { error } = await auth.client.auth.updateUser({
-    data: { repoplay_rendered: [{ repository, description: preview.description, renderedAt: Date.now(), mode: "source" in preview && preview.source.frontendOnly ? "frontend" : undefined }, ...projects].slice(0, 100) },
+  const { projects: existing } = await readPrivate(current.userId);
+  const projects = existing.filter(item => item.repository.toLowerCase() !== repository.toLowerCase());
+  await writePrivate(current.userId, {
+    repoplay_rendered: [{ repository, description: preview.description, renderedAt: Date.now(), mode: "source" in preview && preview.source.frontendOnly ? "frontend" : undefined }, ...projects].slice(0, 100),
   });
-  return auth.apply(new Response(null, { status: error ? 503 : 204 }));
+  return new Response(null, { status: 204 });
 }
 
-async function authenticatedViewer(request: Request, token: string, env: AuthEnv & { PREVIEW_SIGNING_SECRET?: string }) {
-  const auth = authContext(request, env);
-  const userId = await auth.userId();
-  return auth.apply(userId
-    ? await serveTemporaryPreview(request, token, env.PREVIEW_SIGNING_SECRET, userId)
-    : new Response("Preview not found.", { status: 404, headers: previewHeaders }));
+async function authenticatedViewer(request: Request, token: string, env: Record<string, string | undefined>) {
+  const current = await session();
+  return current
+    ? serveTemporaryPreview(request, token, env.PREVIEW_SIGNING_SECRET, current.userId)
+    : new Response("Preview not found.", { status: 404, headers: previewHeaders });
 }
 
 async function serveTemporaryPreview(request: Request, token: string, secret: string | undefined, userId: string) {
@@ -70,7 +67,7 @@ async function serveTemporaryPreview(request: Request, token: string, secret: st
   const framePolicy = "origin" in preview ? preview.origin : "'self'";
   const frameSandbox = "origin" in preview ? "allow-scripts allow-same-origin" : "allow-scripts";
   const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Temporary preview · RepoPlay</title>
-  <style nonce="${nonce}">:root{color-scheme:dark;--bg:#020617;--panel:#101a2c;--text:#edf4ff;--accent:#a6c6ff;--border:#2a4166}:root[data-theme=light]{color-scheme:light;--bg:#f4f7fb;--panel:#ffffff;--text:#14213a;--accent:#2563eb;--border:#c6d5ed}body{margin:0;min-height:100dvh;display:flex;flex-direction:column;background:var(--bg);color:var(--text);font:16px system-ui}header{min-height:54px;box-sizing:border-box;padding:10px 24px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;background:var(--panel);border-bottom:1px solid var(--border)}a{color:var(--accent);text-decoration:none;font-weight:700}button{border:1px solid var(--border);border-radius:8px;padding:7px 10px;background:var(--bg);color:var(--text);font:inherit;cursor:pointer}iframe{display:block;width:100%;flex:1;border:0;background:white}#save-status{font-size:.875rem}</style></head>
+  <style nonce="${nonce}">:root{color-scheme:dark;--bg:#05070f;--panel:rgb(255 255 255/.06);--text:#f1f5ff;--muted:#9aa8c4;--accent:#7c8cff;--border:rgb(255 255 255/.12)}:root[data-theme=light]{color-scheme:light;--bg:#f3f6fd;--panel:rgb(255 255 255/.8);--text:#0e1630;--muted:#4b5a7a;--accent:#4f5df0;--border:rgb(15 23 60/.12)}body{margin:0;min-height:100dvh;display:flex;flex-direction:column;background:var(--bg);color:var(--text);font:15px/1.5 ui-sans-serif,system-ui,sans-serif}header{min-height:56px;box-sizing:border-box;padding:10px 20px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;background:var(--panel);backdrop-filter:blur(20px) saturate(160%);border-bottom:1px solid var(--border)}a{color:var(--text);text-decoration:none;font-weight:750;letter-spacing:-.02em}a::before{content:"← ";color:var(--accent)}button{border:1px solid var(--border);border-radius:10px;padding:7px 12px;background:var(--panel);color:var(--text);font:inherit;cursor:pointer}#status{padding:4px 12px;border-radius:999px;background:var(--panel);border:1px solid var(--border);font-size:.84rem;font-weight:600}iframe{display:block;width:100%;flex:1;border:0;background:white}#save-status,header span{font-size:.84rem;color:var(--muted)}</style></head>
   <body><header><a href="/workspace#gallery">RepoPlay</a><strong id="status">Temporary preview</strong>${"origin" in preview ? '<button id="confirm" hidden>Preview is visible</button>' : ""}${"source" in preview && preview.source.frontendOnly ? '<span>Frontend demo · Backend services disabled</span>' : ""}<span role="status" id="save-status"></span></header>
   <iframe title="Repository preview" src="${frameHref}" sandbox="${frameSandbox}" referrerpolicy="no-referrer"></iframe>
   <script nonce="${nonce}">

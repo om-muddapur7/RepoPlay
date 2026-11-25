@@ -9,9 +9,7 @@
     "check": "tsc --noEmit && next build"
   },
   "dependencies": {
-    "@supabase/ssr": "^0.12.7",
-    "@supabase/supabase-js": "^2.119.2",
-    "cookie": "^2.0.2",
+    "@clerk/nextjs": "^7.10.9",
     "next": "16.4.6",
     "react": "19.3.1",
     "react-dom": "19.3.1"

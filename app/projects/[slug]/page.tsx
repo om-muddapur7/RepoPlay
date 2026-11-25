@@ -23,7 +23,7 @@ export default async function ProjectPage({ params }: PageProps) {
 
   return (
     <main className="shell details">
-      <Link className="nav-link" href="/#gallery">Back to projects</Link>
+      <Link className="back-link" href="/workspace#samples">← Back to projects</Link>
       <div className="detail-grid">
         <div>
           <p className="category">{project.category}</p>
@@ -32,7 +32,7 @@ export default async function ProjectPage({ params }: PageProps) {
           <p className="detail-copy">By {project.author} · {project.technology}</p>
           <div className="actions">
             <a className="button" href={project.demo} target="_blank" rel="noopener noreferrer">Open live demo</a>
-            <a className="button secondary" href={project.source} target="_blank" rel="noopener noreferrer">View on GitHub</a>
+            <a className="ghost-button" href={project.source} target="_blank" rel="noopener noreferrer">View on GitHub</a>
           </div>
         </div>
         <ProjectArt theme={project.theme} />

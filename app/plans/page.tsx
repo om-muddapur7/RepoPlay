@@ -1,35 +1,48 @@
-import { Billing } from "../../components/billing";
+import type { Metadata } from "next";
+import { Checkout } from "../../components/checkout";
+import { PlanCards } from "../../components/plan-cards";
 
-const plans = [
-  { title: "Free trial", price: "$0", period: "", features: ["2 website previews", "10 minutes per preview"] },
-  { title: "Weekly", price: "$5", period: "/ week", features: ["7 days of access", "Private project gallery", "Reopen saved projects"] },
-  { title: "Monthly", price: "$18", period: "/ month", features: ["1 month of access", "Private project gallery", "Reopen saved projects"] },
+export const metadata: Metadata = { title: "Pricing", description: "Simple, flexible plans for exploring GitHub projects." };
+
+const rows = [
+  ["Website previews", "2 total", "Unlimited", "Unlimited"],
+  ["Preview length", "10 minutes", "10 minutes", "10 minutes"],
+  ["Private gallery", "—", "Included", "Included"],
+  ["Reopen saved projects", "—", "Included", "Included"],
+  ["Frontend-only demos", "Included", "Included", "Included"],
+  ["Support", "Community", "Email", "Priority"],
 ];
 
-export default function Plans(){return <main className="shell studio"><header><h1>Plans &amp; subscriptions</h1><p>Choose how long you want to explore.</p></header>      <section className="landing-section" id="plan-fallback" aria-labelledby="pricing-title">
-        <div className="landing-heading">
-          <h2 id="pricing-title">Compare plans</h2>
-          <p>Planned pricing while subscriptions are being set up.</p>
+const faqs = [
+  ["Can I cancel any time?", "Yes. Manage or cancel your subscription from your account page. You keep access until the end of the paid period."],
+  ["What counts as a preview?", "Each time you create a temporary preview from a GitHub repository counts once on the free trial. Paid plans have no preview cap."],
+  ["Which payment methods do you accept?", "Cards and wallets supported by Stripe, handled through Clerk Billing. RepoPlay never sees your card details."],
+  ["Do previews run my project's backend?", "No. RepoPlay previews static sites and compatible frontend builds. Backend servers and databases are not started."],
+];
+
+export default function Plans() {
+  return (
+    <main className="shell page">
+      <header className="page-head center">
+        <span className="eyebrow">Pricing</span>
+        <h1>Simple plans, <span className="gradient-text">no surprises</span></h1>
+        <p>Start free. Upgrade when you want unlimited previews and a private gallery.</p>
+      </header>
+      <PlanCards />
+      <Checkout />
+      <section className="section">
+        <div className="section-head"><h2>Compare plans</h2></div>
+        <div className="glass table-wrap">
+          <table className="compare">
+            <thead><tr><th scope="col">Feature</th><th scope="col">Free</th><th scope="col">Weekly</th><th scope="col">Monthly</th></tr></thead>
+            <tbody>{rows.map(([feature, ...cells]) => <tr key={feature}><td>{feature}</td>{cells.map((cell, i) => <td key={i}>{cell}</td>)}</tr>)}</tbody>
+          </table>
         </div>
-        <ul className="landing-grid">
-          {plans.map((plan, index) => (
-            <li className={`landing-card plan-card${index === 0 ? " current-plan" : ""}`} key={plan.title}>
-              <div className="plan-heading">
-                <h3>{plan.title}</h3>
-                {index === 0 && <span className="plan-badge">Current plan</span>}
-              </div>
-              <p className="plan-price"><strong>{plan.price}</strong>{plan.period && <span>{plan.period}</span>}</p>
-              <ul className="plan-features">
-                {plan.features.map(feature => <li key={feature}>{feature}</li>)}
-              </ul>
-              {index === 0 ? <a className="quiet-button plan-action" href="/workspace">Try free</a> : (
-                <details className="plan-action">
-                  <summary className="button">Subscription details</summary>
-                  <p role="status">Checkout is coming soon.</p>
-                </details>
-              )}
-            </li>
-          ))}
-        </ul>
       </section>
-<Billing /></main>}
+      <section className="section">
+        <div className="section-head"><h2>Questions, answered</h2></div>
+        <div className="faq">{faqs.map(([q, a]) => <details className="glass" key={q}><summary>{q}</summary><p>{a}</p></details>)}</div>
+      </section>
+    </main>
+  );
+}
