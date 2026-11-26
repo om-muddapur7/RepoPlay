@@ -1,83 +1,383 @@
-# RepoPlay
 
-RepoPlay lets developers publish public GitHub projects alongside working, hosted demos. Visitors can browse, filter, and try projects without an account.
+<div align="center">
 
-## MVP scope
+# ▶️ RepoPlay
 
-- Visitors search the gallery by title, description, or technology, filter by category, open project and developer pages, and launch demos or visit the source repository.
-- Developers sign in with GitHub, import a public repository, add an HTTPS demo URL and optional thumbnail, and publish, edit, or unpublish their listing.
-- Owners see daily demo launches. A launch counts an explicit viewer or external-link click. It does not measure whether the third-party application loaded or how long someone used it.
-- Later releases can add bookmarks, collections, trending, screenshots, teams, monetization, and automatic deployment.
+### Turn GitHub Repositories into Interactive Experiences
 
-## Architecture
+Discover, preview, and interact with GitHub projects directly in your browser — without cloning repositories, installing dependencies, or setting up a local environment.
 
-Use one Next.js App Router application with TypeScript. Tailwind supplies the styling foundation. Add individual shadcn/ui controls and Motion when an interaction needs them. Server components render public pages and route handlers handle OAuth callbacks, GitHub imports, and analytics.
+[Report Bug](https://github.com/om-muddapur7/RepoPlay/issues) • [Request Feature](https://github.com/om-muddapur7/RepoPlay/issues) • [Portfolio](https://om-portfolio-plum.vercel.app/)
 
-RepoPlay uses Clerk for authentication, private gallery metadata, and billing. The redesigned app needs a Next.js runtime for Clerk session middleware and server routes. The previous Sites Worker packaging script targets the earlier Supabase release.
+</div>
 
-Accept HTTPS demo links without credentials. Do not proxy submitted sites or execute repositories. The viewer should load a cross-origin iframe only after a user requests it, grant scripts with a minimal sandbox, and avoid enabling top navigation, popups, or same-origin access by default. Always show a direct external link because some hosts block framing or require capabilities the sandbox restricts. Keep analytics writes server-side with rate limits and retry-safe event IDs.
+---
 
-## Visual design
+## 📖 Overview
 
-Use a deep navy canvas, high-contrast text, and mint accents for actions. Lead with a short introduction and the searchable discovery grid. Give each card a distinct application preview, technology, and category. Use a single-column layout on small screens. The details view presents context, source, and demo launch together. Keep forms and dashboard actions keyboard accessible.
+RepoPlay is a full-stack SaaS platform that transforms compatible public GitHub repositories into interactive browser-based previews. It allows developers, recruiters, students, and non-technical users to explore software projects without the complexity of local development environments.
 
-## Repository structure
+Simply paste a GitHub repository URL, and RepoPlay automatically detects compatible frontend projects, builds their source code, or opens an existing Vercel deployment.
+
+Designed with security, accessibility, and developer experience in mind, RepoPlay combines Next.js, TypeScript, esbuild WebAssembly, sandboxed iframes, and Clerk to deliver an intuitive project exploration experience.
+
+---
+
+## ✨ Features
+
+### 🚀 Repository Preview Engine
+
+- 🔗 **GitHub URL Integration** – Preview compatible public GitHub repositories using their URLs.
+- ⚡ **Browser-Based Execution** – Explore supported projects without local installation.
+- 🌐 **Static Website Support** – Run HTML, CSS, and JavaScript websites.
+- ⚛️ **React Project Support** – Preview compatible Vite and Create React App projects.
+- 📦 **Frontend Extraction** – Detect and preview compatible frontend folders within full-stack repositories.
+- ☁️ **Deployment Detection** – Automatically open supported existing Vercel deployments.
+- 🛠️ **Source Code Bundling** – Bundle compatible frontend source code using esbuild WebAssembly.
+- ⏳ **Temporary Preview Sessions** – Secure preview links that expire after 10 minutes.
+
+---
+
+### 👤 User Features
+
+- 🔐 Secure authentication with Clerk
+- 📊 Personal workspace dashboard
+- 📚 Private project gallery
+- 🕘 Previously rendered project history
+- 🔄 Reopen saved projects in fresh preview sessions
+- 🔍 Explore curated sample projects
+- 👤 Account and subscription management
+- 🌙 Light and dark themes
+- 📱 Fully responsive design
+- 🎨 Modern and minimalist user interface
+
+---
+
+### 💎 Premium Features
+
+- 🚀 Unlimited repository previews
+- 🔄 Unrestricted preview creation
+- 💳 Integrated subscription checkout
+- 📋 Subscription and plan management
+
+### Subscription Plans
+
+| Feature | Free | Basic | Premium |
+|---|---|---|---|
+| Repository Previews | 2 | Unlimited | Unlimited |
+| Preview Duration | 10 min | extended | extended |
+| Static Website Support | ✅ | ✅ | ✅ |
+| Compatible React Previews | ✅ | ✅ | ✅ |
+| Personal Project Gallery | ✅ | ✅ | ✅ |
+| Project History | ✅ | ✅ | ✅ |
+
+Current subscription prices and additional plan benefits are displayed through Clerk Billing.
+
+---
+
+## 🛠️ Tech Stack
+
+### 🎨 Frontend
+
+<p>
+  <img src="https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white" />
+  <img src="https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black" />
+  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" />
+  <img src="https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white" />
+</p>
+
+### ⚙️ Backend
+
+<p>
+  <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" />
+  <img src="https://img.shields.io/badge/Next.js_API-000000?style=for-the-badge&logo=nextdotjs&logoColor=white" />
+  <img src="https://img.shields.io/badge/GitHub_REST_API-181717?style=for-the-badge&logo=github&logoColor=white" />
+</p>
+
+### 🔐 Authentication & Billing
+
+<p>
+  <img src="https://img.shields.io/badge/Clerk_Authentication-6C47FF?style=for-the-badge&logo=clerk&logoColor=white" />
+  <img src="https://img.shields.io/badge/Clerk_Billing-6C47FF?style=for-the-badge&logo=clerk&logoColor=white" />
+</p>
+
+### 📦 Preview Engine
+
+<p>
+  <img src="https://img.shields.io/badge/esbuild-FFCF00?style=for-the-badge&logo=esbuild&logoColor=black" />
+  <img src="https://img.shields.io/badge/WebAssembly-654FF0?style=for-the-badge&logo=webassembly&logoColor=white" />
+  <img src="https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white" />
+  <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" />
+  <img src="https://img.shields.io/badge/Sandboxed_Iframes-334155?style=for-the-badge" />
+</p>
+
+### ☁️ Deployment & Data Management
+
+<p>
+  <img src="https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white" />
+  <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" />
+  <img src="https://img.shields.io/badge/Clerk_User_Metadata-6C47FF?style=for-the-badge&logo=clerk&logoColor=white" />
+</p>
+
+---
+
+## 🏗️ System Architecture
+
+```mermaid
+flowchart TD
+    A[User] --> B[Next.js Frontend]
+    B --> C[Clerk Authentication]
+    B --> D[Next.js API Routes]
+    D --> E[Subscription & Usage Validation]
+    E --> F[GitHub REST API]
+    F --> G[Repository Analysis]
+    G --> H{Preview Mode}
+    H -->|Existing Deployment| I[Vercel Deployment]
+    H -->|Static Website| J[Static Preview Engine]
+    H -->|React Project| K[esbuild WebAssembly]
+    J --> L[Sandboxed iframe]
+    K --> L
+    I --> M[Interactive Demo]
+    L --> M
+    M --> N[Private Project Gallery]
+    N --> O[Clerk User Metadata]
+```
+
+---
+
+## ⚡ How It Works
+
+1. **Sign In** – Authenticate securely using Clerk.
+2. **Submit Repository** – Paste a public GitHub repository URL into the workspace.
+3. **Validate Access** – Verify the user's subscription and available preview allowance.
+4. **Analyze Repository** – Fetch repository metadata and inspect frontend entry points.
+5. **Select Preview Mode** – Detect an existing deployment, static website, or compatible React application.
+6. **Generate Preview** – Create a signed temporary preview link and bundle compatible source code when required.
+7. **Launch Interactive Demo** – Explore the project directly in the browser.
+8. **Save Project** – Record successfully rendered projects in the user's private gallery.
+9. **Reopen Anytime** – Generate a fresh session for previously saved projects.
+
+Each temporary preview session expires after **10 minutes**.
+
+---
+
+## 📂 Project Structure
 
 ```text
-app/                         Public pages and application entry points
-  projects/[slug]/           Project details
-  developers/[handle]/       Public profile (planned)
-  dashboard/                 Publishing and analytics (planned)
-  auth/callback/             GitHub OAuth callback (planned)
-  api/                       GitHub import and launch tracking (planned)
-components/                  Gallery and shared interface components
-lib/                         Catalog, then server integrations and validation
-supabase/migrations/         Versioned Postgres schema
-.github/workflows/           CI build and type checks (planned)
+RepoPlay/
+│
+├── app/
+│   ├── workspace/          # Repository previews and gallery
+│   ├── plans/              # Subscription plans
+│   ├── profile/            # User account settings
+│   ├── api/                # Backend API route handlers
+│   ├── temporary/          # Temporary demo viewer
+│   └── static-preview/     # Static preview assets
+│
+├── components/             # Reusable UI components
+│                           # Navigation, pricing, gallery
+│
+├── lib/                    # Core application logic
+│                           # Repository source loading
+│                           # Preview signing
+│                           # Account and usage management
+│
+├── public/                 # Public assets
+│
+├── proxy.ts                # Clerk middleware
+├── .env.example            # Environment variable template
+└── README.md
 ```
 
-The initial schema defines profiles, categories, projects, and demo launch events. Projects have a composite owner/repository uniqueness rule, an indexed search document, and owner-only draft access. The analytics table records idempotent launch events with a project/time index for daily counts.
+---
 
-## Implementation milestones
+## 📋 Supported Projects
 
-1. Bootstrap Next.js and build the responsive gallery and detail routes against clearly labeled example projects.
-2. Apply the database migration, wire up GitHub OAuth, and replace the sample catalog with published database records. Verify private drafts and cross-account access with two accounts.
-3. Add GitHub import, owner dashboard, and publish/edit/delete flows. Verify repository metadata, validation, and authorization on the server.
-4. Add developer pages, the interactive sandboxed viewer, and owner analytics. Test an embeddable demo, a framing-blocked demo, and retry-safe analytics.
-5. Add CI, check accessibility and runtime cost, exercise OAuth on the Workers preview, and deploy on the free plans.
+| Project Type | Support |
+|---|---|
+| HTML, CSS & JavaScript | ✅ Supported |
+| React + Vite | ✅ Compatible projects |
+| Create React App | ✅ Compatible projects |
+| Full-Stack Applications | ⚠️ Frontend-only preview |
+| Existing Vercel Deployments | ✅ Supported deployments |
+| Backend Server Execution | ❌ Not supported |
+| Database Execution | ❌ Not supported |
+| Private GitHub Repositories | ❌ Not supported |
+| Server-Side Environment Variables | ❌ Not supported |
 
-## Run locally
+RepoPlay is primarily designed for frontend project exploration. Applications requiring backend servers, databases, private API keys, or unsupported build configurations may have limited functionality.
 
-### Ten-minute repository previews
+---
 
-Paste a public GitHub repository URL into the preview form. RepoPlay embeds a working public Vercel deployment from the repository’s Website field when available. Source previews also support static sites with a root index.html, relative CSS, JavaScript and image paths, and links between HTML pages. For an unhosted React + Vite app, it pins the default branch to a commit and compiles the source inside a sandboxed browser frame. Source previews support Vite's `src/main` convention, a standard `root` element, local imports, CSS, common image formats, React, and React Router. React Router uses in-memory navigation in this mode. RepoPlay does not execute install scripts or Vite config and does not provide backend services or environment secrets.
+## 📸 Screenshots
 
-Select **Frontend demo** to build directly from source and check the usual frontend folders (`frontend`, `client`, and `web`) as well as the repository root. AI Expense Tracker uses its nested React frontend with sample transactions and simulated insights. Edits in that demo are kept only in memory during the preview.
+### Home Page
 
-Preview creation and viewing require a Clerk session. Preview links are tied to the signed-in Clerk user and expire after ten minutes. Source previews are saved after rendering, and embedded demos are saved after the user confirms visibility.
+<img width="1842" height="795" alt="image" src="https://github.com/user-attachments/assets/ed4849f2-d5a5-4de4-a2f5-ad55c03259d9" />
 
-To enable the feature, set `PREVIEW_SIGNING_SECRET` to a randomly generated server-side secret of at least 32 bytes. In PowerShell, run the following from the project directory before starting Next.js.
 
-```powershell
-$env:PREVIEW_SIGNING_SECRET = node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
+### Workspace
+
+<img width="1870" height="852" alt="image" src="https://github.com/user-attachments/assets/6368ead0-73a6-4287-8434-a77169be94ba" />
+
+
+### Interactive Repository Preview
+
+<img width="1895" height="851" alt="image" src="https://github.com/user-attachments/assets/c535e7cd-0d12-43e3-9ac3-34607c0287c5" />
+
+
+
+---
+
+## 📌 API Features
+
+- GitHub Repository Metadata Retrieval
+- Repository Source Code Fetching
+- Frontend Entry Point Detection
+- Existing Deployment Detection
+- Temporary Preview Generation
+- Signed Preview Token Validation
+- Preview Expiration Management
+- Subscription and Usage Validation
+- User Project History Management
+- Private Project Gallery Management
+
+---
+
+## 🔒 Authentication & Security
+
+RepoPlay uses **Clerk Authentication** and signed preview tokens to manage secure access to application resources.
+
+- Email and Password Authentication
+- Google Authentication with Clerk configuration
+- Protected Application Routes
+- Secure User Session Management
+- Subscription-Based Access Control
+- Account-Specific Preview Tokens
+- Time-Limited Preview Sessions
+- Sandboxed iframe Rendering
+- Private User Metadata Storage
+- Server-Side Preview Validation
+
+Temporary preview links are signed and validated before access is granted. Source-built frontend previews use sandboxed iframes to provide browser-level isolation.
+
+---
+
+## 💳 Subscription Management
+
+RepoPlay integrates **Clerk Billing** to provide subscription-based access to repository previews.
+
+- Free and Paid Subscription Plans
+- Preview Usage Limits
+- Integrated Subscription Checkout
+- Paid Plan Access Validation
+- User Subscription Management
+- Dynamic Pricing Information
+
+To enable subscription upgrades locally, configure Clerk Billing and create the corresponding plans in your Clerk dashboard.
+
+
+---
+
+## 🎯 Use Cases
+
+### 👨‍💻 Developers
+
+- Showcase projects without requiring local setup.
+- Explore open-source frontend projects.
+- Share interactive software demonstrations.
+
+### 🧑‍💼 Recruiters
+
+- Evaluate developer portfolios through working demonstrations.
+- Explore projects without cloning repositories.
+- Understand project functionality beyond source code.
+
+### 🎓 Students
+
+- Discover and explore open-source applications.
+- Learn from existing frontend implementations.
+- Showcase academic and personal projects.
+
+### 🌍 Non-Technical Users
+
+- Explore software projects without programming knowledge.
+- Interact with applications directly in the browser.
+- Discover what developers have built.
+
+---
+
+## 📈 Future Improvements
+
+- 🤖 AI-Powered Repository Analysis
+- 📝 Automatic Project Summarization
+- 📦 Support for Additional Frontend Frameworks
+- 🖥️ Cloud-Based Backend Execution
+- 🐳 Docker-Based Isolated Environments
+- 🔒 Private Repository Support
+- 🌍 Public Community Project Gallery
+- 📊 Project Analytics Dashboard
+- ⭐ Project Ratings and Reviews
+- 📁 GitHub Account Repository Integration
+- 🔗 Shareable Project Collections
+- 👥 Collaborative Developer Workspaces
+- 🧩 Embeddable Project Previews
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome!
+
+1. Fork the repository.
+2. Create your feature branch.
+
+```bash
+git checkout -b feature/NewFeature
 ```
 
-Set the same secret through your hosting provider's secret manager for a deployed installation. Apply an edge rate limit to `POST /api/temporary-previews` before opening the service to public traffic. GitHub's public API also has request quotas.
+3. Commit your changes.
 
-Requires Node.js 20.9 or later. On Windows PowerShell:
-
-```powershell
-npm.cmd install
-npm.cmd run dev
+```bash
+git commit -m "Add New Feature"
 ```
 
-Open http://localhost:3000. Configure the Clerk keys below before starting. Use `npm.cmd run check` for TypeScript and production build checks.
+4. Push to your branch.
 
-## Setup (Clerk auth + billing)
+```bash
+git push origin feature/NewFeature
+```
 
-1. Create an application at https://dashboard.clerk.com and enable the sign-in methods you want (Google, GitHub, email).
-2. Copy `.env.example` to `.env.local` and fill in `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `PREVIEW_SIGNING_SECRET` (32+ chars).
-3. In Clerk, open **Billing**, enable it, connect Stripe, and create **user** plans with the slugs `basic` ($5/month) and `premium` ($12/month). Change `PAID_PLAN_SLUGS` if you use different slugs.
-4. `npm install && npm run dev`.
+5. Open a Pull Request.
 
-Free users get 2 previews (enforced server-side); users on a paid plan are unlimited. Gallery data and usage counters live in each user's Clerk private metadata. Existing Supabase galleries need an account migration before switching a live installation.
+If you encounter a preview-related issue, include the repository URL, preview mode, and the error displayed in the workspace.
+
+---
+
+## ⭐ Support
+
+If you found RepoPlay useful, please consider giving it a ⭐ on GitHub.
+
+Your support helps motivate future development and improvements.
+
+---
+
+## 👨‍💻 Author
+
+**Om Muddapur**
+
+- GitHub: https://github.com/om-muddapur7
+- LinkedIn: https://linkedin.com/in/om-muddapur-aa56a525b
+- Portfolio: https://om-portfolio-plum.vercel.app/
+- X: https://x.com/Om7248
+
+---
+
+<div align="center">
+
+### Stop Cloning. Start Exploring. ▶️
+
+Made with ❤️ using Next.js, TypeScript, esbuild & Clerk
+
+</div>
