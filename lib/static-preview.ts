@@ -14,7 +14,7 @@ export async function serveStaticAsset(request: Request, token: string, segments
   const reply = (message: string, status: number) => new Response(message, { status, headers: previewHeaders });
   const preview = secret && await readPreviewToken(token, secret, STATIC_CONTENT_AUDIENCE);
   if (!preview || !("source" in preview) || preview.source.entry !== "index.html") return reply("Preview not found.", 404);
-  if (Date.now() >= preview.expiresAt) return reply("This RepoPlay preview has expired.", 410);
+  if (preview.expiresAt !== null && Date.now() >= preview.expiresAt) return reply("This RepoPlay preview has expired.", 410);
   if (segments.length > 12 || segments.some(segment => !/^[a-zA-Z0-9_-][a-zA-Z0-9_.-]{0,119}$/.test(segment))) {
     return reply("File not found.", 404);
   }
@@ -53,7 +53,7 @@ export async function serveStaticAsset(request: Request, token: string, segments
   } finally {
     await reader.cancel();
   }
-  if (Date.now() >= preview.expiresAt) return reply("This RepoPlay preview has expired.", 410);
+  if (preview.expiresAt !== null && Date.now() >= preview.expiresAt) return reply("This RepoPlay preview has expired.", 410);
 
   const scope = `${new URL(publicOrigin ?? request.url).origin}/static-preview/${token}/`;
   const csp = extension === "html"

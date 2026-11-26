@@ -3,7 +3,7 @@ import { BoltIcon, CodeIcon, FolderIcon, LayersIcon, PlayIcon, ReactIcon } from 
 
 const features = [
   { Icon: PlayIcon, color: "#2563eb", title: "Live demos", description: "Open a working deployment or generate a temporary preview from public GitHub source." },
-  { Icon: BoltIcon, color: "#f59e0b", title: "Quick previews", description: "Paste a repository URL in the workspace. Each temporary preview runs for ten minutes." },
+  { Icon: BoltIcon, color: "#f59e0b", title: "Quick previews", description: "Paste a repository URL in the workspace. Free and Basic previews last ten minutes. Premium previews have no time limit." },
   { Icon: CodeIcon, color: "#06b6d4", title: "Static websites", description: "Preview sites built with HTML, CSS, and JavaScript that have a root index.html." },
   { Icon: ReactIcon, color: "#10b981", title: "React apps", description: "Try compatible Vite and Create React App projects directly from their public source." },
   { Icon: LayersIcon, color: "#8b5cf6", title: "Frontend demos", description: "Open supported frontend clients from full-stack repositories in frontend mode." },

@@ -18,7 +18,8 @@ async function recordRenderedPreview(request: Request, token: string, env: Recor
   const current = await session();
   if (!current) return missing();
   const preview = await readPreviewToken(token, env.PREVIEW_SIGNING_SECRET, current.userId);
-  if (!preview || preview.expiresAt <= Date.now()) return missing();
+  if (!preview || (preview.expiresAt === null ? current.tier !== "premium" : preview.expiresAt <= Date.now())) return missing();
+  if (!current.paid) return new Response(null, { status: 204 });
   const repository = "source" in preview
     ? `https://github.com/${preview.source.owner}/${preview.source.name}` : preview.repository;
   if (!repository) return missing();
@@ -27,20 +28,20 @@ async function recordRenderedPreview(request: Request, token: string, env: Recor
   await writePrivate(current.userId, {
     repoplay_rendered: [{ repository, description: preview.description, renderedAt: Date.now(), mode: "source" in preview && preview.source.frontendOnly ? "frontend" : undefined }, ...projects].slice(0, 100),
   });
-  return new Response(null, { status: 204 });
+  return Response.json({ saved: true }, { headers: { "Cache-Control": "private, no-store" } });
 }
 
 async function authenticatedViewer(request: Request, token: string, env: Record<string, string | undefined>) {
   const current = await session();
   return current
-    ? serveTemporaryPreview(request, token, env.PREVIEW_SIGNING_SECRET, current.userId)
+    ? serveTemporaryPreview(request, token, env.PREVIEW_SIGNING_SECRET, current.userId, current.tier === "premium")
     : new Response("Preview not found.", { status: 404, headers: previewHeaders });
 }
 
-async function serveTemporaryPreview(request: Request, token: string, secret: string | undefined, userId: string) {
+async function serveTemporaryPreview(request: Request, token: string, secret: string | undefined, userId: string, premium: boolean) {
   const preview = secret && await readPreviewToken(token, secret, userId);
   if (!preview) return new Response("Preview not found.", { status: 404, headers: previewHeaders });
-  if (Date.now() >= preview.expiresAt) return new Response("This RepoPlay preview has expired.", { status: 410, headers: previewHeaders });
+  if (preview.expiresAt === null ? !premium : Date.now() >= preview.expiresAt) return new Response("This RepoPlay preview has expired.", { status: 410, headers: previewHeaders });
 
   const nonce = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(18))));
   const staticSource = "source" in preview && preview.source.entry === "index.html" ? preview.source : null;
@@ -61,7 +62,7 @@ async function serveTemporaryPreview(request: Request, token: string, secret: st
     });
   }
   const staticGrant = staticSource
-    ? await createPreviewToken({ source: staticSource }, preview.expiresAt - PREVIEW_DURATION_MS, secret!, STATIC_CONTENT_AUDIENCE)
+    ? await createPreviewToken({ source: staticSource }, (preview.expiresAt ?? Date.now()) - PREVIEW_DURATION_MS, secret!, STATIC_CONTENT_AUDIENCE, preview.expiresAt === null)
     : null;
   const frameHref = staticGrant ? `/static-preview/${staticGrant.token}/index.html` : "origin" in preview ? preview.origin + "/" : "?source=1";
   const framePolicy = "origin" in preview ? preview.origin : "'self'";
@@ -78,7 +79,7 @@ async function serveTemporaryPreview(request: Request, token: string, secret: st
   const confirmation = document.getElementById('confirm');
   let saved = false;
   async function save() {
-    if (saved || Date.now() >= expiry) return;
+    if (saved || (expiry !== null && Date.now() >= expiry)) return;
     saved = true;
     const result = document.getElementById('save-status');
     const write = () => fetch(location.pathname, { method: 'POST' });
@@ -86,7 +87,7 @@ async function serveTemporaryPreview(request: Request, token: string, secret: st
       const response = await (navigator.locks ? navigator.locks.request('repoplay-gallery', write) : write());
       if (!response.ok) throw new Error('Save failed');
       if (confirmation) confirmation.hidden = true;
-      result.textContent = 'Saved to your gallery';
+      result.textContent = response.status === 204 ? 'Preview ready' : 'Saved to your gallery';
     } catch {
       saved = false;
       result.textContent = 'Could not save to your gallery';
@@ -100,7 +101,7 @@ async function serveTemporaryPreview(request: Request, token: string, secret: st
       if (event.source !== frame.contentWindow || event.origin !== 'null') return;
       if (event.data === 'repoplay:rendered') save();
       const root = ${JSON.stringify(staticGrant ? `/static-preview/${staticGrant.token}/` : null)};
-      if (!root || Date.now() >= expiry || event.data?.type !== 'repoplay:navigate' || typeof event.data.path !== 'string' || !event.data.path.startsWith(root)) return;
+      if (!root || (expiry !== null && Date.now() >= expiry) || event.data?.type !== 'repoplay:navigate' || typeof event.data.path !== 'string' || !event.data.path.startsWith(root)) return;
       const url = new URL(event.data.path, location.origin);
       if (url.origin === location.origin && url.pathname.startsWith(root) && url.pathname.endsWith('.html')) frame.src = url.href;
     });
@@ -110,9 +111,13 @@ async function serveTemporaryPreview(request: Request, token: string, secret: st
     status.textContent = seconds ? 'Preview expires in ' + Math.floor(seconds / 60) + ':' + String(seconds % 60).padStart(2, '0') : 'Preview expired';
     if (!seconds) frame.remove();
   }
-  update();
-  setInterval(update, 1000);
-  document.addEventListener('visibilitychange', update);
+  if (expiry === null) {
+    status.textContent = 'Premium preview · No time limit';
+  } else {
+    update();
+    setInterval(update, 1000);
+    document.addEventListener('visibilitychange', update);
+  }
   </script></body></html>`;
   return new Response(html, {
     headers: {

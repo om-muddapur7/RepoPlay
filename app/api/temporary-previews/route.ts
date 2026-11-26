@@ -1,5 +1,6 @@
 import { createPreviewToken, fetchHomepage, findSourcePreview, isHtml, previewHeaders, repositoryFromUrl, supportedHomepage } from "../../../lib/temporary-preview";
-import { FREE_PREVIEW_LIMIT, readPrivate, session, writePrivate } from "../../../lib/account";
+import { planNames, previewLimits } from "../../../lib/plans";
+import { readPrivate, session, writePrivate } from "../../../lib/account";
 
 export async function POST(request: Request) {
   const secret = process.env.PREVIEW_SIGNING_SECRET;
@@ -7,21 +8,41 @@ export async function POST(request: Request) {
   if (request.headers.get("origin") !== origin) return new Response("Forbidden.", { status: 403, headers: previewHeaders });
   const current = await session();
   if (!current) return Response.json({ error: "Sign in to create a preview." }, { status: 401, headers: previewHeaders });
-  let created = 0;
-  if (!current.paid) {
-    created = (await readPrivate(current.userId)).created;
-    if (created >= FREE_PREVIEW_LIMIT) {
-      return Response.json({ error: `You have used your ${FREE_PREVIEW_LIMIT} free previews. Upgrade to keep creating.`, upgrade: true }, { status: 402, headers: previewHeaders });
+  if (/^application\/json(?:\s*;|$)/i.test(request.headers.get("content-type") ?? "") &&
+      Number(request.headers.get("content-length")) > 0 &&
+      Number(request.headers.get("content-length")) <= 2048) {
+    const payload = await request.clone().json().catch(() => null);
+    if (payload?.mode === "frontend" && !current.paid) {
+      return Response.json({ error: "Frontend demo mode is included in Basic and Premium.", upgrade: true }, { status: 403, headers: previewHeaders });
+    }
+    if (payload?.action === "inspect") {
+      if (payload.mode === "frontend" && current.tier !== "premium") {
+        return Response.json({ error: "Frontend compatibility checks are included in Premium.", upgrade: true }, { status: 403, headers: previewHeaders });
+      }
+      return createTemporaryPreview(request, secret, current.userId, true);
     }
   }
-  const response = await createTemporaryPreview(request, secret, current.userId);
-  if (response.status === 201 && !current.paid) await writePrivate(current.userId, { repoplay_created: created + 1 });
+  let created = 0;
+  const limit = previewLimits[current.tier];
+  if (limit !== null) {
+    const usage = await readPrivate(current.userId);
+    created = current.tier === "basic" ? usage.basicCreated : usage.created;
+    if (created >= limit) {
+      return Response.json({ error: `You have used your ${limit} ${planNames[current.tier]} previews. Upgrade to keep creating.`, upgrade: true }, { status: 402, headers: previewHeaders });
+    }
+  }
+  const response = await createTemporaryPreview(request, secret, current.userId, false, current.tier === "premium");
+  if (response.status === 201 && limit !== null) {
+    await writePrivate(current.userId, current.tier === "basic"
+      ? { repoplay_basic_created: created + 1 }
+      : { repoplay_created: created + 1 });
+  }
   return response;
 }
 
-async function createTemporaryPreview(request: Request, secret: string | undefined, userId: string) {
+async function createTemporaryPreview(request: Request, secret: string | undefined, userId: string, inspect = false, untimed = false) {
   const reply = (body: object, status: number) => Response.json(body, { status, headers: previewHeaders });
-  if (!secret || new TextEncoder().encode(secret).length < 32) return reply({ error: "Temporary previews are disabled on this installation." }, 503);
+  if (!inspect && (!secret || new TextEncoder().encode(secret).length < 32)) return reply({ error: "Preview creation needs a valid PREVIEW_SIGNING_SECRET on the server." }, 503);
   if (request.headers.get("sec-fetch-site") === "cross-site" ||
     !/^application\/json(?:\s*;|$)/i.test(request.headers.get("content-type") ?? "")) {
     return reply({ error: "Submit the repository URL from RepoPlay." }, 400);
@@ -53,9 +74,10 @@ async function createTemporaryPreview(request: Request, secret: string | undefin
       const homepage = await fetchHomepage(origin).catch(() => null);
       await homepage?.body?.cancel();
       if (homepage && isHtml(homepage)) {
+        if (inspect) return reply({ report: "Existing Vercel deployment · HTML reachable" }, 200);
         stage = "preview signing";
         const repository = `https://github.com/${repo.owner}/${repo.name}`;
-        const { token, expiresAt } = await createPreviewToken({ origin, repository, description }, Date.now(), secret, userId);
+        const { token, expiresAt } = await createPreviewToken({ origin, repository, description }, Date.now(), secret!, userId, untimed);
         return reply({ path: `/temporary/${token}`, expiresAt }, 201);
       }
     }
@@ -64,8 +86,14 @@ async function createTemporaryPreview(request: Request, secret: string | undefin
     const source = await findSourcePreview(repo.owner, repo.name, frontendOnly);
     if (!source && frontendOnly) return reply({ error: "No compatible static, Vite React, or Create React App frontend was found." }, 422);
     if (!source) return reply({ error: "Source previews support static sites with a root index.html and compatible Vite React and Create React App projects." }, 422);
+    if (inspect) {
+      const framework = source.entry === "index.html" ? "Static HTML"
+        : source.entry.startsWith("src/index.") ? "React · Create React App entry"
+        : "React · Vite-style entry";
+      return reply({ report: `${framework} · Folder: ${source.directory ?? "/"} · Entry: ${source.entry}. Imports and runtime behavior are checked when the preview runs.` }, 200);
+    }
     stage = "preview signing";
-    const { token, expiresAt } = await createPreviewToken({ source, description }, Date.now(), secret, userId);
+    const { token, expiresAt } = await createPreviewToken({ source, description }, Date.now(), secret!, userId, untimed);
     return reply({ path: `/temporary/${token}`, expiresAt }, 201);
   } catch (error) {
     console.error("RepoPlay preview failed", stage, error instanceof Error ? error.name : "Unknown error");

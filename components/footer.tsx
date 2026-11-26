@@ -12,7 +12,7 @@ export function Footer() {
           </div>
           <div>
             <h4>Company</h4>
-            <div className="footer-links"><Link href="/">Home</Link><Link href="/about">About us</Link><Link href="/contact">Contact us</Link><Link href="/plans">Pricing</Link></div>
+            <div className="footer-links"><Link href="/">Home</Link><Link href="/#about">About us</Link><Link href="/contact">Contact us</Link><Link href="/#plans">Pricing</Link></div>
           </div>
           <div>
             <h4>Explore RepoPlay</h4>

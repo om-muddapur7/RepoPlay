@@ -3,16 +3,18 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-type Project = { repository: string; renderedAt: number; description?: string; mode?: "frontend" };
-type Account = { name: string; avatar: string; paid: boolean; used: number; limit: number | null };
+import { planNames, type PlanTier } from "../lib/plans";
 
-export function Workspace() {
+type Project = { repository: string; renderedAt: number; description?: string; mode?: "frontend" };
+type Account = { name: string; avatar: string; paid: boolean; tier: PlanTier; used: number; limit: number | null };
+
+export function Workspace({ initialRepository = "" }: { initialRepository?: string }) {
   const [account, setAccount] = useState<Account | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
   const [query, setQuery] = useState("");
-  const [repository, setRepository] = useState("");
+  const [repository, setRepository] = useState(initialRepository);
   const [frontend, setFrontend] = useState(false);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<{ text?: string; path?: string; upgrade?: boolean; error?: boolean } | null>(null);
@@ -39,17 +41,19 @@ export function Workspace() {
     return () => document.removeEventListener("visibilitychange", refresh);
   }, [load]);
 
-  async function create(repo: string, frontendOnly: boolean) {
+  async function create(repo: string, frontendOnly: boolean, inspect = false) {
     setBusy(true);
-    setResult({ text: "Checking repository…" });
+    setResult({ text: "Checking GitHub for a deployment or compatible frontend…" });
     try {
-      const response = await fetch("/api/temporary-previews", {
+      const request = () => fetch("/api/temporary-previews", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ repository: repo, mode: frontendOnly ? "frontend" : undefined }),
+        body: JSON.stringify({ repository: repo, action: inspect ? "inspect" : undefined, mode: frontendOnly ? "frontend" : undefined }),
       });
+      const response = await (!inspect && navigator.locks ? navigator.locks.request("repoplay-create-preview", request) : request());
       const data = await response.json().catch(() => ({}));
       if (!response.ok) setResult({ text: data.error ?? "Could not create a preview.", error: true, upgrade: Boolean(data.upgrade) });
-      else { setResult({ text: "Your preview is ready.", path: data.path }); load(); }
+      else if (inspect) setResult({ text: data.report });
+      else { setResult({ text: "Preview link created. Open it to load the demo.", path: data.path }); load(); }
     } catch {
       setResult({ text: "Could not create a preview. Try again.", error: true });
     } finally {
@@ -84,7 +88,7 @@ export function Workspace() {
           <h1>{firstName ? `Welcome back, ${firstName}` : "Workspace"}</h1>
           <p>Paste a public GitHub link to open a temporary demo.</p>
         </div>
-        {account && <span className={`plan-chip${account.paid ? " pro" : ""}`}>{account.paid ? "Pro plan" : "Free trial"}</span>}
+        {account && <span className={`plan-chip${account.paid ? " pro" : ""}`}>{planNames[account.tier]}</span>}
       </header>
 
       <section className="panel glass" id="preview" aria-labelledby="preview-title">
@@ -94,20 +98,30 @@ export function Workspace() {
           <div className="input-row">
             <label className="sr-only" htmlFor="repository">GitHub repository URL</label>
             <input id="repository" className="field" type="url" required maxLength={256} placeholder="https://github.com/owner/repo" value={repository} onChange={event => setRepository(event.target.value)} />
-            <button className="button" type="submit" disabled={busy}>{busy ? "Working…" : "Create preview"}</button>
           </div>
-          <label className="check"><input type="checkbox" checked={frontend} onChange={event => setFrontend(event.target.checked)} /> Frontend demo (skip backend services)</label>
+          <div className="preview-controls">
+            {account?.paid
+              ? <label className="check"><input type="checkbox" checked={frontend} onChange={event => setFrontend(event.target.checked)} /> Frontend demo (skip backend services)</label>
+              : account && <Link className="check" href="/plans#checkout">Frontend demos require Basic or Premium</Link>}
+            <div className="preview-actions">
+              <button className="ghost-button" type="button" disabled={busy || (frontend && account?.tier !== "premium")} onClick={event => {
+                if (event.currentTarget.form?.reportValidity()) void create(repository.trim(), frontend, true);
+              }}>Check compatibility</button>
+              <button className="button" type="submit" disabled={busy}>Create preview</button>
+            </div>
+          </div>
+          {frontend && account?.tier === "basic" && <p className="sub">Frontend compatibility checks are available on Premium. You can still create a frontend preview on Basic.</p>}
         </form>
         {result && (
-          <p className={`result${result.error ? " error" : ""}`} role="status">
-            {result.text}
-            {result.path && <a className="button small" href={result.path}>Open preview</a>}
-            {result.upgrade && <Link className="button small" href="/plans#checkout">Upgrade</Link>}
-          </p>
+          <div className={`result preview-outcome${result.error ? " error" : ""}`}>
+            <p role="status">{result.text}</p>
+            {result.path && <a className="button" href={result.path}>Open preview <span aria-hidden="true">→</span></a>}
+            {result.upgrade && <Link className="button" href="/plans#checkout">Upgrade</Link>}
+          </div>
         )}
         {account && account.limit !== null && (
           <div className="meter">
-            <div className="meter-top"><span>Free previews used</span><span>{Math.min(account.used, account.limit)} / {account.limit}</span></div>
+            <div className="meter-top"><span>{planNames[account.tier]} previews used</span><span>{Math.min(account.used, account.limit)} / {account.limit}</span></div>
             <div className="meter-bar" role="progressbar" aria-valuemin={0} aria-valuemax={account.limit} aria-valuenow={Math.min(account.used, account.limit)}><i style={{ width: `${percent}%` }} /></div>
           </div>
         )}
@@ -120,7 +134,8 @@ export function Workspace() {
         </div>
         {!loaded && <p className="empty glass" role="status">Loading your projects…</p>}
         {loaded && failed && <p className="empty glass" role="status">Your gallery is temporarily unavailable.</p>}
-        {loaded && !failed && visible.length === 0 && <p className="empty glass" role="status">{query ? "No projects match your search." : "Your gallery is empty. Create a preview to add your first project."}</p>}
+        {account && !account.paid && <p className="empty glass">The private gallery is included with Basic and Premium. <Link href="/plans#checkout">View plans</Link></p>}
+        {loaded && !failed && account?.paid && visible.length === 0 && <p className="empty glass" role="status">{query ? "No projects match your search." : "Your gallery is empty. Create a preview to add your first project."}</p>}
         <ul className="project-grid">
           {visible.map(project => {
             const [owner, name] = new URL(project.repository).pathname.slice(1).split("/");

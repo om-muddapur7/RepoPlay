@@ -34,7 +34,7 @@ Designed with security, accessibility, and developer experience in mind, RepoPla
 - 📦 **Frontend Extraction** – Detect and preview compatible frontend folders within full-stack repositories.
 - ☁️ **Deployment Detection** – Automatically open supported existing Vercel deployments.
 - 🛠️ **Source Code Bundling** – Bundle compatible frontend source code using esbuild WebAssembly.
-- ⏳ **Temporary Preview Sessions** – Secure preview links that expire after 10 minutes.
+- ⏳ **Temporary Preview Sessions** – Free and Basic previews expire after 10 minutes. Premium previews have no time limit.
 
 ---
 
@@ -42,9 +42,9 @@ Designed with security, accessibility, and developer experience in mind, RepoPla
 
 - 🔐 Secure authentication with Clerk
 - 📊 Personal workspace dashboard
-- 📚 Private project gallery
-- 🕘 Previously rendered project history
-- 🔄 Reopen saved projects in fresh preview sessions
+- 📚 Private project gallery on Basic and Premium
+- 🕘 Previously rendered project history on Basic and Premium
+- 🔄 Reopen saved projects in fresh preview sessions on Basic and Premium
 - 🔍 Explore curated sample projects
 - 👤 Account and subscription management
 - 🌙 Light and dark themes
@@ -56,20 +56,22 @@ Designed with security, accessibility, and developer experience in mind, RepoPla
 ### 💎 Premium Features
 
 - 🚀 Unlimited repository previews
-- 🔄 Unrestricted preview creation
+- ⏳ No time limit per preview
+- 🔍 Compatibility checks in standard and frontend-only modes
 - 💳 Integrated subscription checkout
 - 📋 Subscription and plan management
 
 ### Subscription Plans
 
 | Feature | Free | Basic | Premium |
-|---|---|---|---|
-| Repository Previews | 2 | Unlimited | Unlimited |
-| Preview Duration | 10 min | extended | extended |
-| Static Website Support | ✅ | ✅ | ✅ |
-| Compatible React Previews | ✅ | ✅ | ✅ |
-| Personal Project Gallery | ✅ | ✅ | ✅ |
-| Project History | ✅ | ✅ | ✅ |
+| --- | --- | --- | --- |
+| Repository previews | 2 total | 20 total | Unlimited |
+| Time per preview | 10 minutes | 10 minutes | No time limit |
+| Sample project library | Included | Included | Included |
+| Static and compatible React previews | Included | Included | Included |
+| Compatibility checks | Standard | Standard | Standard and frontend-only |
+| Private gallery and reopen saved projects | — | Included | Included |
+| Frontend-only demos | — | Included | Included |
 
 Current subscription prices and additional plan benefits are displayed through Clerk Billing.
 
@@ -158,7 +160,7 @@ flowchart TD
 8. **Save Project** – Record successfully rendered projects in the user's private gallery.
 9. **Reopen Anytime** – Generate a fresh session for previously saved projects.
 
-Each temporary preview session expires after **10 minutes**.
+Free and Basic previews expire after **10 minutes**. Premium previews have no time limit.
 
 ---
 
@@ -207,6 +209,57 @@ RepoPlay/
 | Server-Side Environment Variables | ❌ Not supported |
 
 RepoPlay is primarily designed for frontend project exploration. Applications requiring backend servers, databases, private API keys, or unsupported build configurations may have limited functionality.
+
+---
+
+## ⚙️ Run Locally
+
+Requires Node.js 20.9 or later, npm, and a Clerk application.
+
+```bash
+git clone https://github.com/om-muddapur7/RepoPlay.git
+cd RepoPlay
+npm ci
+```
+
+Copy `.env.example` to `.env.local`. Set the required values below.
+
+| Variable | Value |
+| --- | --- |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Publishable key from your Clerk app |
+| `CLERK_SECRET_KEY` | Server-side secret key from the same Clerk app |
+| `PREVIEW_SIGNING_SECRET` | Random server-side secret of at least 32 bytes |
+| `PAID_PLAN_SLUGS` | Optional comma-separated Clerk plan slugs. Defaults to `basic,premium` |
+
+Generate a preview signing secret locally and paste the output into `.env.local`.
+
+```bash
+node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
+```
+
+Keep `.env.local` out of Git. Enable Google in your Clerk app if you want Google sign-in. Enable Clerk Billing and configure the matching user plans to test upgrades.
+
+```bash
+npm run dev
+```
+
+Open [localhost:3000](http://localhost:3000/), sign in, and paste a public GitHub repository URL into **Workspace**.
+
+---
+
+## Open in RepoPlay
+
+Add this badge to a project README. Replace the host with your RepoPlay deployment and replace `OWNER` and `REPO` with the source repository details.
+
+```markdown
+[![Open in RepoPlay](https://img.shields.io/badge/Open%20in-RepoPlay-2563eb)](https://YOUR-REPOPLAY-HOST/workspace?repo=https%3A%2F%2Fgithub.com%2FOWNER%2FREPO#preview)
+```
+
+The link pre-fills the workspace. Use **Check compatibility** for a report without consuming a preview, or **Create preview** to open a temporary demo.
+
+## ☁️ Deploy on Vercel
+
+Import the GitHub repository into Vercel with the **Next.js** preset. Add the required environment variables to the Production environment, then deploy. For a public release, use a Clerk production instance configured for the deployment domain. Subsequent pushes to the connected production branch can trigger new deployments.
 
 ---
 

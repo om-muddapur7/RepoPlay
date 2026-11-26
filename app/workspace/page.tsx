@@ -5,8 +5,9 @@ import { Workspace } from "../../components/workspace";
 
 export const metadata: Metadata = { title: "Workspace" };
 
-export default async function WorkspacePage() {
+export default async function WorkspacePage({ searchParams }: { searchParams: Promise<{ repo?: string | string[] }> }) {
   await auth.protect();
+  const { repo } = await searchParams;
   return (
     <main className="workspace-layout">
       <aside className="workspace-sidebar">
@@ -18,7 +19,7 @@ export default async function WorkspacePage() {
         </nav>
       </aside>
       <div className="workspace-main">
-      <Workspace />
+      <Workspace initialRepository={typeof repo === "string" ? repo.slice(0, 256) : undefined} />
       <section id="samples" aria-labelledby="sample-title">
         <div className="gallery-head"><div><h2 id="sample-title">Sample projects</h2><p>Three interactive demos to try.</p></div></div>
         <SampleProjects />

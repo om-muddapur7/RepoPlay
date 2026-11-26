@@ -28,7 +28,7 @@ export function supportedHomepage(input: unknown) {
 
 type Source = { owner: string; name: string; commit: string; entry: string; directory?: string; frontendOnly?: true };
 type PreviewTarget = ({ origin: string; repository?: string } | { source: Source }) & { description?: string };
-type Preview = PreviewTarget & { expiresAt: number };
+type Preview = PreviewTarget & { expiresAt: number | null };
 
 const sourceEntry = /^src\/(?:main|index)\.(tsx|jsx|ts|js)$/;
 
@@ -59,8 +59,8 @@ async function previewKey(secret: string) {
   return crypto.subtle.importKey("raw", raw, "AES-GCM", false, ["encrypt", "decrypt"]);
 }
 
-export async function createPreviewToken(target: string | PreviewTarget, now: number, secret: string, userId: string) {
-  const expiresAt = now + PREVIEW_DURATION_MS;
+export async function createPreviewToken(target: string | PreviewTarget, now: number, secret: string, userId: string, untimed = false) {
+  const expiresAt = untimed ? null : now + PREVIEW_DURATION_MS;
   const preview = typeof target === "string" ? { origin: target } : target;
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const body = encoder.encode(JSON.stringify({ ...preview, expiresAt }));
@@ -81,7 +81,7 @@ export async function readPreviewToken(token: string, secret: string, userId: st
     );
     const item = JSON.parse(new TextDecoder().decode(decrypted));
     const origin = supportedHomepage(item.origin);
-    if (!Number.isSafeInteger(item.expiresAt)) return null;
+    if (item.expiresAt !== null && !Number.isSafeInteger(item.expiresAt)) return null;
     const description = typeof item.description === "string" ? item.description.slice(0, 140) : undefined;
     if (origin) {
       const repo = typeof item.repository === "string" && repositoryFromUrl(item.repository);

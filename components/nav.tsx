@@ -8,7 +8,7 @@ import { Menu } from "./icons";
 import { ThemeToggle } from "./theme-toggle";
 
 const links = [
-  { href: "/#home", label: "Home" },
+  { href: "/", label: "Home" },
   { href: "/#about", label: "About" },
   { href: "/#plans", label: "Pricing" },
   { href: "/workspace", label: "Workspace" },

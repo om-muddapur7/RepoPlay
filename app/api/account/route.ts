@@ -1,16 +1,17 @@
 import { repositoryFromUrl } from "../../../lib/temporary-preview";
-import { FREE_PREVIEW_LIMIT, readPrivate, session, writePrivate } from "../../../lib/account";
+import { previewLimits } from "../../../lib/plans";
+import { readPrivate, session, writePrivate } from "../../../lib/account";
 
 const noStore = { "Cache-Control": "private, no-store" };
 
 export async function GET() {
   const current = await session();
   if (!current) return Response.json({ account: null, projects: [] }, { headers: noStore });
-  const { user, projects, created } = await readPrivate(current.userId);
+  const { user, projects, created, basicCreated } = await readPrivate(current.userId);
   const name = [user.firstName, user.lastName].filter(Boolean).join(" ").slice(0, 100) || user.username || "Your account";
   return Response.json({
-    account: { name, avatar: user.imageUrl, paid: current.paid, used: created, limit: current.paid ? null : FREE_PREVIEW_LIMIT },
-    projects,
+    account: { name, avatar: user.imageUrl, paid: current.paid, tier: current.tier, used: current.tier === "basic" ? basicCreated : created, limit: previewLimits[current.tier] },
+    projects: current.paid ? projects : [],
   }, { headers: noStore });
 }
 
@@ -18,6 +19,7 @@ export async function DELETE(request: Request) {
   const current = await session();
   if (!current) return new Response(null, { status: 401 });
   if (request.headers.get("origin") !== new URL(request.url).origin) return new Response(null, { status: 403 });
+  if (!current.paid) return new Response(null, { status: 403, headers: noStore });
   const length = Number(request.headers.get("content-length"));
   if (length <= 0 || length > 1024) return new Response(null, { status: 400 });
   const payload = await request.json().catch(() => null);
